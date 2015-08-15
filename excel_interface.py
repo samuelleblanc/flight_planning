@@ -19,6 +19,7 @@ class dict_position:
         Excel (win or mac)
         map_interactive
         map_utils
+        simplekml
     Required files:
         none
     Example:
@@ -27,6 +28,8 @@ class dict_position:
         Written: Samuel LeBlanc, 2015-08-07, Santa Cruz, CA
         Modified: Samuel LeBlanc, 2015-08-11, Santa Cruz, CA
                  - update and bug fixes
+        Modified: Samuel LeBlanc, 2015-08-14, NASA Ames, CA
+                - added save to kml functionality
     """
     def __init__(self,lon0='14 38.717E',lat0='22 58.783S',speed=150.0,UTC_start=7.0,UTC_conversion=+1.0,alt0=0.0):
         import numpy as np
@@ -335,7 +338,7 @@ class dict_position:
                 setattr(self,s,v)
         return changed
         
-    def Create_excel(self):
+    def Create_excel(self,name='P3 Flight path'):
         """
         Purpose:
             Program that creates the link to an excel file
@@ -360,7 +363,8 @@ class dict_position:
         from xlwings import Workbook, Sheet, Range, Chart
         import numpy as np
         wb = Workbook()
-        Sheet(1).name = 'Flight Path'
+        self.name = name
+        Sheet(1).name = self.name
         Range('A1').value = ['WP','Lat\n[+-90]','Lon\n[+-180]',
                              'Speed\n[m/s]','delayT\n[min]','Altitude\n[m]',
                              'CumLegT\n[hh:mm]','UTC\n[hh:mm]','LocalT\n[hh:mm]',
@@ -380,5 +384,42 @@ class dict_position:
         Range('G2:J2').number_format = 'hh:mm'
         #Range('A2').value = np.arange(50).reshape((50,1))+1
         return wb
-  
+
+    def save2kml(self,filename=None):
+        """
+        Program to save the points contained in the spreadsheet to a kml file
+        """
+        import simplekml
+        if not filename:
+            raise NameError 'filename not defined'
+            return
+        self.kml = simplekml.Kml(open=1)
+        self.kml.document = simplekml.Folder(name = self.name)
+        self.print_points_kml()
+        self.print_path_kml()
+        self.save(filename)
+
+    def print_points_kml(self):
+        """
+        print the points saved in lat, lon
+        """
+        if not self.kml:
+            raise NameError 'kml not initilaized'
+            return
+        for i in xrange(self.n):
+            pnt = self.kml.newpoint()
+            pnt.name = 'WP \# %i' % self.WP[i]
+            pnt.coords = [(self.lon[i],self.lat[i])]
+
+    def print_path_kml(self):
+        """
+        print the path onto a kml file
+        """
+        import simplekml
+        path = kml.newlinestring(name=self.name)
+        coords = [(lon,lat,alt) for (lon,lat,alt) in (self.lon,self.lat,self.alt)]
+        path.coords = coords
+        path.altitudemode = simplekml.AltitudeMode.relativetoground
+        path.extrude = 1
+        path.style.linestyle.color = simplekml.Color.red
 

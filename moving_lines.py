@@ -2,9 +2,6 @@ import matplotlib
 matplotlib.rc_file('C:\\Users\\sleblan2\\Research\\python_codes\\file.rc')
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
-#if __name__ == "__main__":
-    #if run_from_ipython():
-        #%matplotlib tk
 import numpy as np
 import scipy.io as sio
 from mpl_toolkits.basemap import Basemap
@@ -26,14 +23,7 @@ def Create_interaction():
     wb = ex.dict_position()
     lines = mi.LineBuilder(line,m=m,ex=wb)
     plt.show()
-    return m
-
-def run_from_ipython():
-    try:
-        __IPYTHON__
-        return True
-    except NameError:
-        return False
+    return lines
 
 if __name__ == "__main__":
-    Create_interaction()
+    lines = Create_interaction()

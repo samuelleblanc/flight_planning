@@ -89,6 +89,8 @@ class LineBuilder:
         print 'release'#,event
         self.press = None
         self.line.axes.format_coord = self.format_position_simple
+        tb = plt.get_current_fig_manager().toolbar
+        if tb.mode!='': return
         if self.contains:
             hlight = self.highlight_linepoint.findobj()[0]
             while hlight in self.line.axes.lines:
@@ -113,6 +115,8 @@ class LineBuilder:
         'Function that moves the points to desired location'
         if event.inaxes!=self.line.axes: return
         if self.press is None: return
+        tb = plt.get_current_fig_manager().toolbar
+        if tb.mode!='': return
         sys.stdout.write("\r"+" moving: x=%2.5f, y=%2.5f" %(event.xdata,event.ydata))
         sys.stdout.flush()
         if self.contains:
