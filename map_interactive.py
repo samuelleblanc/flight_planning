@@ -128,7 +128,7 @@ class LineBuilder:
         self.ys[i] = event.ydata
         if self.m:
             self.lons[i],self.lats[i] = self.m(event.xdata,event.ydata,inverse=True)
-        self.line.set_data(self.xs,self.ys)
+        self.line.set_data(list(self.xs),list(self.ys))
         self.line.figure.canvas.draw()
 
     def onkeypress(self,event):
