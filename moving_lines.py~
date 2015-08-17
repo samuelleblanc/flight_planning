@@ -1,5 +1,5 @@
 import matplotlib
-matplotlib.rc_file('file.rc')
+matplotlib.rc_file('C:\\Users\\sleblan2\\Research\\python_codes\\file.rc')
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
