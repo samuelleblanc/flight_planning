@@ -1,5 +1,7 @@
 import matplotlib
-matplotlib.rc_file('file.rc')
+import os
+fp = os.path.dirname(os.path.abspath(__file__))
+matplotlib.rc_file(fp+os.path.sep+'file.rc')
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
