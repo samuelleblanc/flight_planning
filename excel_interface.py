@@ -391,7 +391,7 @@ class dict_position:
         """
         import simplekml
         if not filename:
-            raise NameError 'filename not defined'
+            raise NameError('filename not defined')
             return
         self.kml = simplekml.Kml(open=1)
         self.kml.document = simplekml.Folder(name = self.name)
@@ -404,7 +404,7 @@ class dict_position:
         print the points saved in lat, lon
         """
         if not self.kml:
-            raise NameError 'kml not initilaized'
+            raise NameError('kml not initilaized')
             return
         for i in xrange(self.n):
             pnt = self.kml.newpoint()
