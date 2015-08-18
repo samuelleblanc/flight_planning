@@ -31,7 +31,8 @@ class dict_position:
         Modified: Samuel LeBlanc, 2015-08-14, NASA Ames, CA
                 - added save to kml functionality
     """
-    def __init__(self,lon0='14 38.717E',lat0='22 58.783S',speed=150.0,UTC_start=7.0,UTC_conversion=+1.0,alt0=0.0):
+    def __init__(self,lon0='14 38.717E',lat0='22 58.783S',speed=150.0,UTC_start=7.0,
+                 UTC_conversion=+1.0,alt0=0.0,verbose=False):
         import numpy as np
         from xlwings import Range
         import map_interactive as mi
@@ -56,6 +57,9 @@ class dict_position:
         self.speed_kts = self.speed*1.94384449246
         self.alt_kft = self.alt*3.28084/1000.0
         self.head = self.legt
+        self.googleearthopened = False
+        self.netkml = None
+        self.verbose = verbose
         try:
             self.calculate()
         except:
@@ -167,7 +171,8 @@ class dict_position:
         Reruns check_updates_excel whenever a line is found to be deleted
         """
         while self.check_updates_excel():
-            print 'line removed, cutting it out'
+            if self.verbose:
+                print 'line removed, cutting it out'
 
     def check_updates_excel(self):
         """
@@ -189,7 +194,8 @@ class dict_position:
             n0,_ = dim0
             n1,_ = dim
             if n0>n1: tmp = tmp0
-            print 'vertical num: %i, range num: %i' %(n0,n1)
+            if self.verbose:
+                print 'vertical num: %i, range num: %i' %(n0,n1)
         num = 0
         num_del = 0
         for i,t in enumerate(tmp):
@@ -212,12 +218,15 @@ class dict_position:
                         changed = True
                 if changed: num = num+1
         if self.n>(i+1):
-            print 'deleting points'
+            if self.verbose:
+                print 'deleting points'
             for j in range(i+1,self.n-1):
                 self.dels(j)
+                self.n = self.n-1
                 num = num+1
         if num>0:
-            print 'Updated %i lines from Excel, recalculating and printing' % num
+            if self.verbose:
+                print 'Updated %i lines from Excel, recalculating and printing' % num
             self.calculate()
             self.write_to_excel()
         self.num_changed = num
@@ -256,6 +265,7 @@ class dict_position:
         self.endbearing = np.delete(self.endbearing,i)
         self.turn_deg = np.delete(self.turn_deg,i)
         self.turn_time = np.delete(self.turn_time,i)
+        print 'deletes, number of lon left:%i' %len(self.lon)
 
     def appends(self,lat,lon,sp=None,dt=None,alt=None,
                 clt=None,utc=None,loc=None,lt=None,d=None,cd=None,
@@ -393,11 +403,21 @@ class dict_position:
         if not filename:
             raise NameError('filename not defined')
             return
-        self.kml = simplekml.Kml(open=1)
+        if not self.netkml:
+            self.netkml = simplekml.Kml(open=1)
+            net = self.netkml.newnetworklink(name=self.name)
+            net.link.href = filename
+            net.link.refreshmode = simplekml.RefreshMode.onchange
+            filenamenet = filename+'_net.kml'
+            self.netkml.save(filenamenet)
+            self.kml = simplekml.Kml(open=1)
         self.kml.document = simplekml.Folder(name = self.name)
         self.print_points_kml()
         self.print_path_kml()
-        self.save(filename)
+        self.kml.save(filename)
+        if not self.googleearthopened:
+            self.openGoogleEarth(filenamenet)
+            self.googleearthopened = True
 
     def print_points_kml(self):
         """
@@ -416,10 +436,33 @@ class dict_position:
         print the path onto a kml file
         """
         import simplekml
-        path = kml.newlinestring(name=self.name)
-        coords = [(lon,lat,alt) for (lon,lat,alt) in (self.lon,self.lat,self.alt)]
+        import numpy as np
+        path = self.kml.newlinestring(name=self.name)
+        coords = [(lon,lat,alt) for (lon,lat,alt) in np.array((self.lon,self.lat,self.alt)).T]
         path.coords = coords
-        path.altitudemode = simplekml.AltitudeMode.relativetoground
+        path.altitudemode = simplekml.AltitudeMode.clamptoground
         path.extrude = 1
         path.style.linestyle.color = simplekml.Color.red
+        path.style.linestyle.width = 4.0
+
+    def openGoogleEarth(self,filename=None):
+        """
+        Function that uses either COM object or appscript (not yet implemented)
+        to load the new Google Earth kml file
+        """
+        if not filename:
+            print 'no filename defined, returning'
+            return
+        import sys
+        import os
+        if sys.platform.startswith('win'):
+            try:
+                import win32com.client
+                ge = win32com.client.Dispatch("GoogleEarth.ApplicationGE")
+                ge.OpenKmlFile(filename,True)
+            except:
+                os.startfile(filename)
+        else:
+            os.startfile(filename)
+        
 
