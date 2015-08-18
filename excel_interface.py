@@ -405,6 +405,7 @@ class dict_position:
             return
         if not self.netkml:
             self.netkml = simplekml.Kml(open=1)
+            self.netkml.name = 'Flight plan'
             net = self.netkml.newnetworklink(name=self.name)
             net.link.href = filename
             net.link.refreshmode = simplekml.RefreshMode.onchange
