@@ -106,19 +106,19 @@ class gui:
         import matplotlib.pyplot as plt
         f1 = plt.gcf()
         fig = plt.figure()
-        fig.plot(line.ex.UTC,line.ex.alt,'x-')
-        fig.xlabel('UTC [Hours]')
-        fig.ylabel('Alt [km]')
+        plt.plot(self.line.ex.UTC,self.line.ex.alt,'x-')
+        plt.xlabel('UTC [Hours]')
+        plt.ylabel('Alt [km]')
         plt.figure(f1)
 
     def gui_savefig(self):
         'gui program to save the current figure as png'
+        if not self.line:
+            print 'No line object'
+            return
         filename = self.gui_file_save(ext='.png')
         if not filename: return
-        if not line:
-            print 'No line to save'
-            return
-        line.m.savefig(filename,dpi=600,transparent=True)
+        self.line.m.savefig(filename,dpi=600,transparent=True)
 
     def stopandquit(self):
         'function to force a stop and quit the mainloop, future with exit of python'
@@ -149,7 +149,8 @@ class gui:
         self.bsaveas2kml.pack()
         self.bsave2kml.pack()
         self.bsavefig.pack()
-        tk.Text(self.root,text='--- Options ---').pack()
+        tk.Frame(self.root,height=2,width=100,bg='black',relief='sunken').pack(padx=5,pady=5)
+        tk.Label(self.root,text='--- Options ---').pack()
         if self.line:
             self.yup = True
             #self.bshowWP = tk.Button(self.root,text='Show Waypoints',
@@ -157,8 +158,8 @@ class gui:
             self.bplotalt = tk.Button(self.root,text='Plot alt vs time',
                                       command=self.gui_plotalttime)
             self.bplotalt.pack()
-            
-        tk.Text(self.root,text='---------------').pack()
+
+        tk.Frame(self.root,height=2,width=100,bg='black',relief='sunken').pack(padx=5,pady=5)    
         tk.Button(self.root,text='Quit',command=self.stopandquit).pack()
         #bpressed.pack()
         #bmaketext.pack()
