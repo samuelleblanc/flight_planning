@@ -13,17 +13,17 @@ import excel_interface as ex
 import map_interactive as mi
 import gui
 
-def Create_interaction():
-    fig,ax = plt.subplots()
-    m = mi.build_basemap(ax=ax)
-    ax.set_title('line segments')
+def Create_interaction(**kwargs):
+    #fig,ax = plt.subplots()
+    m = mi.build_basemap()
+    plt.gca().set_title('line segments')
     lat0,lon0 = mi.pll('22 58.783S'), mi.pll('14 38.717E')
     x0,y0 = m(lon0,lat0)
     line, = m.plot([x0],[y0],'ro-')
     text = ('Press s to stop interaction\\n'
             'Press i to restart interaction\\n')
     #plt.text(1.0,0.1,text)
-    wb = ex.dict_position()
+    wb = ex.dict_position(**kwargs)
     lines = mi.LineBuilder(line,m=m,ex=wb)
     plt.show()
     g = gui.gui(lines)
