@@ -15,6 +15,7 @@ class dict_position:
     Outputs:
         dict_position class 
     Dependencies:
+        numpy
         xlwings
         Excel (win or mac)
         map_interactive
@@ -30,9 +31,11 @@ class dict_position:
                  - update and bug fixes
         Modified: Samuel LeBlanc, 2015-08-14, NASA Ames, CA
                 - added save to kml functionality
+        Modified: Samuel LeBlanc, 2015-08-18, NASA Ames, CA
+                - added open excel functionality via the filename option and extra method
     """
     def __init__(self,lon0='14 38.717E',lat0='22 58.783S',speed=150.0,UTC_start=7.0,
-                 UTC_conversion=+1.0,alt0=0.0,verbose=False):
+                 UTC_conversion=+1.0,alt0=0.0,verbose=False,filename=None):
         import numpy as np
         from xlwings import Range
         import map_interactive as mi
@@ -64,11 +67,17 @@ class dict_position:
             self.calculate()
         except:
             print 'calculate failed'
-        self.wb = self.Create_excel()
-        try:
+        if not filename:
+            self.wb = self.Create_excel()
+            try:
+                self.write_to_excel()
+            except:
+                print 'writing to excel failed'
+        else:
+            self.wb = self.Open_excel(filename=filename)
+            self.check_xl()
+            self.calculate()
             self.write_to_excel()
-        except:
-            print 'writing to excel failed'
 
     def calculate(self):
         """
@@ -347,6 +356,35 @@ class dict_position:
                 v[i] = np.nan
                 setattr(self,s,v)
         return changed
+
+    def Open_excel(self,filename=None):
+        """
+        Purpose:
+            Program that opens and excel file and creates the proper links with pytho
+        Inputs:
+            filename of excel file to open
+        outputs:
+            wb: workbook instance
+        Dependencies:
+            xlwings
+            Excel (win or mac)
+        Example:
+            ...
+        History:
+            Written: Samuel LeBlanc, 2015-08-18, NASA Ames, CA
+        """
+        from xlwings import Workbook, Sheet, Range, Chart
+        import numpy as np
+        if not filename:
+            print 'No filename found'
+            return
+        try:
+            wb = Workbook(filename)
+        except Exception,ie:
+            print 'Exception found:',ie
+            return
+        self.name = Sheet(1).name
+        return wb
         
     def Create_excel(self,name='P3 Flight path'):
         """
@@ -394,6 +432,13 @@ class dict_position:
         Range('G2:J2').number_format = 'hh:mm'
         #Range('A2').value = np.arange(50).reshape((50,1))+1
         return wb
+
+    def save2xl(self,filename=None):
+        """
+        Simple to program to initiate the save function in Excel
+        Same as save button in Excel
+        """
+        self.wb.save(filename)
 
     def save2kml(self,filename=None):
         """

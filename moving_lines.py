@@ -11,6 +11,7 @@ import sys
 import map_utils as mu
 import excel_interface as ex
 import map_interactive as mi
+import gui
 
 def Create_interaction():
     fig,ax = plt.subplots()
@@ -25,6 +26,8 @@ def Create_interaction():
     wb = ex.dict_position()
     lines = mi.LineBuilder(line,m=m,ex=wb)
     plt.show()
+    g = gui.gui(lines)
+    g.make_gui()
     return lines
 
 if __name__ == "__main__":
