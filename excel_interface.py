@@ -194,6 +194,7 @@ class dict_position:
         self.wb.set_current()
         tmp = Range('A2:P%i'%(self.n+1)).value
         tmp0 = Range('A2:P2').vertical.value
+        tmp2 = Range('B2:P2').vertical.value
         dim = np.shape(tmp)
         if len(dim)==1:
             tmp = [tmp]
@@ -202,7 +203,19 @@ class dict_position:
             if len(dim0)==1: dim0 = np.shape([tmp0])
             n0,_ = dim0
             n1,_ = dim
-            if n0>n1: tmp = tmp0
+            dim2 = np.shape(tmp2)
+            if len(dim2)==1: dim2 = np.shape([tmp2])
+            n2,_ = dim2
+            if n0>n1:
+                tmp = tmp0
+            if n2>n0:
+                tmp2 = Range('A2:P%i'%(n2+1)).value
+                if len(np.shape(tmp2))==1:
+                    tmp = [tmp2]
+                else:
+                    tmp = tmp2
+                if self.verbose:
+                    print 'updated to the longer points on lines:%i' %n2
             if self.verbose:
                 print 'vertical num: %i, range num: %i' %(n0,n1)
         num = 0
@@ -214,11 +227,15 @@ class dict_position:
                 num = num+1
                 self.appends(lat,lon,sp,dt,alt,clt,utc,loc,lt,d,cd,dnm,cdnm,spkt,altk)
             elif not wp: # check if empty
-                num = num+1
-                self.dels(i)
-                self.move_xl(i)
-                self.n = self.n-1
-                return True
+                if not lat:
+                    num = num+1
+                    self.dels(i)
+                    self.move_xl(i)
+                    self.n = self.n-1
+                    return True
+                else:
+                    num = num+1
+                    self.appends(lat,lon,sp,dt,alt,clt,utc,loc,lt,d,cd,dnm,cdnm,spkt,altk)
             else:
                 changed = self.mods(i,lat,lon,sp,spkt,dt,alt,altk)
                 if i == 0:
@@ -226,6 +243,8 @@ class dict_position:
                         self.utc[i] = utc*24.0
                         changed = True
                 if changed: num = num+1
+                if self.verbose:
+                    print 'Modifying line #%i' %i
         if self.n>(i+1):
             if self.verbose:
                 print 'deleting points'
@@ -247,8 +266,23 @@ class dict_position:
         """
         from xlwings import Range
         linesbelow = Range('A%i:P%i'%(i+3,self.n+1)).value
+        n_rm = (self.n+1)-(i+3)
+        linelist = False
+        for j,l in enumerate(linesbelow):
+            if type(l) is list:
+                try:
+                    l[0] = l[0]-n_rm
+                except:
+                    yup = True
+                linesbelow[j] = l
+                linelist = True
+        if not linelist:
+            try:
+                linesbelow[0] = linesbelow[0]-n_rm
+            except:
+                yup = True
         Range('A%i:P%i'%(i+2,i+2)).value = linesbelow
-        Range('A%i:P%i'%(self.n+1,self.n+1)).clear_contents()
+        Range('A%i:P%i'%(self.n+1-n_rm+1,self.n+1)).clear_contents()
 
     def dels(self,i):
         """
