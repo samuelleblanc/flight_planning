@@ -10,6 +10,7 @@ class gui:
     Dependencies:
         Tkinter
         excel_interface
+        matplotlib
     Example:
         ...
     History:
@@ -102,7 +103,13 @@ class gui:
 
     def gui_plotalttime(self):
         'gui function to run the plot of alt vs. time'
-        print 'Not yet implemented'
+        import matplotlib.pyplot as plt
+        f1 = plt.gcf()
+        fig = plt.figure()
+        fig.plot(line.ex.UTC,line.ex.alt,'x-')
+        fig.xlabel('UTC [Hours]')
+        fig.ylabel('Alt [km]')
+        plt.figure(f1)
 
     def gui_savefig(self):
         'gui program to save the current figure as png'
