@@ -193,8 +193,11 @@ class LineBuilder:
             return 'x=%2.5f, y=%2.5f, d=%2.5f' % (x,y,self.r)
         
     def update_labels(self):
-        if self.labelsoff:
-            return
+        import matplotlib as mpl
+        if mpl.rcParams['text.usetex']:
+            s = '\#'
+        else:
+            s = '#'
         if self.ex:
             self.wp = self.ex.WP
         else:
@@ -205,17 +208,19 @@ class LineBuilder:
                 try:
                     ll.remove()
                 except:
-                    continue    
-        for i in self.wp:
+                    continue
+        if self.labelsoff:
+            return
+        for i in self.wp:    
             if not self.lbl:
-                self.lbl = [self.line.axes.annotate('\#%i'%i,
+                self.lbl = [self.line.axes.annotate(s+'%i'%i,
                                                     (self.xs[i-1],self.ys[i-1]))]
             else:
                 self.lbl.append(self.line.axes.
-                                annotate('\#%i'%i,(self.xs[i-1],self.ys[i-1])))
+                                annotate(s+'%i'%i,(self.xs[i-1],self.ys[i-1])))
         self.line.figure.canvas.draw()
 
-def build_basemap(lower_left=[-20,-30],upper_right=[20,10],ax=plt.gca()):
+def build_basemap(lower_left=[-20,-30],upper_right=[20,10]):
     """
     First try at a building of the basemap with a 'stere' projection
     Must put in the values of the lower left corner and upper right corner (lon and lat)
@@ -224,7 +229,7 @@ def build_basemap(lower_left=[-20,-30],upper_right=[20,10],ax=plt.gca()):
     """
     m = Basemap(projection='stere',lon_0=(upper_right[0]+lower_left[0]),lat_0=(upper_right[1]+lower_left[1]),
             llcrnrlon=lower_left[0], llcrnrlat=lower_left[1],
-            urcrnrlon=upper_right[0], urcrnrlat=upper_right[1],resolution='h',ax=ax)
+            urcrnrlon=upper_right[0], urcrnrlat=upper_right[1],resolution='h')
     m.drawcoastlines()
     #m.fillcontinents(color='#AAAAAA')
     m.drawstates()
