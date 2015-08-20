@@ -49,4 +49,6 @@ Temporary Items
 .pyc
 *.pyc
 *.*~
-
+build/
+dist/
+py2exe/
