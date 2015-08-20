@@ -26,6 +26,7 @@ def Create_interaction(**kwargs):
     wb = ex.dict_position(**kwargs)
     lines = mi.LineBuilder(line,m=m,ex=wb)
     plt.show()
+    plt.gcf().canvas._tkcanvas.master.geometry("900x1000") 
     g = gui.gui(lines)
     g.make_gui()
     return lines

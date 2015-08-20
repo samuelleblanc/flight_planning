@@ -24,33 +24,27 @@ class gui:
         self.line = line
         self.root = tk.Tk()
     
-    def gui_file_select(self,ext='*'):
+    def gui_file_select(self,ext='*',
+                        ftype=[('Excel 1997-2003','*.xls'),('Excel','*.xlsx'),
+                               ('Kml','*.kml'),('All files','*.*')]):
         """
         Simple gui file select program. Uses TKinter for interface, returns full path
         """
         from Tkinter import Tk
         from tkFileDialog import askopenfilename
-        ftype=[('Excel 1997-2003','*.xls'),
-               ('Excel','*.xlsx'),
-               ('Kml','*.kml'),
-               ('All files','*.*')]
         Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
         filename = askopenfilename(defaultextension=ext,filetypes=ftype) # show an "Open" dialog box and return the path to the selected file
         return filename
 
-    def gui_file_save(self,ext='*'):
+    def gui_file_save(self,ext='*',
+                      ftype=[('Excel 1997-2003','*.xls'),('Excel','*.xlsx'),
+                             ('Kml','*.kml'),('All files','*.*'),('PNG','*.png')]):
         """
         Simple gui file save select program.
         Uses TKinter for interface, returns full path
         """
         from Tkinter import Tk
         from tkFileDialog import asksaveasfilename
-        ftype=[('Excel 1997-2003','*.xls'),
-               ('Excel','*.xlsx'),
-               ('Kml','*.kml'),
-               ('All files','*.*'),
-               ('PNG','*.png')]
-
         Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
         filename = asksaveasfilename(defaultextension=ext,filetypes=ftype) # show an "Open" dialog box and return the path to the selected file
         return filename
@@ -66,7 +60,7 @@ class gui:
         if not self.line:
             print 'No line object'
             return
-        filename = self.gui_file_save(ext='.kml')
+        filename = self.gui_file_save(ext='.kml',ftype=[('All files','*,*'),('KML','*.kml')])
         if not filename: return
         self.kmlfilename = filename
         self.line.ex.save2kml(filename=self.kmlfilename)
@@ -87,15 +81,19 @@ class gui:
         if not self.line:
             print 'No line object'
             return
-        filename = self.gui_file_save(ext='.xlsx')
+        filename = self.gui_file_save(ext='.xlsx',ftype=[('All files','*.*'),
+                                                         ('Excel 1997-2003','*.xls'),
+                                                         ('Excel','*.xlsx')])
         if not filename: return
-        self.line.ex.save2xl()
+        self.line.ex.save2xl(filename)
 
     def gui_open_xl(self):
         if not self.line:
             print 'No line object'
             return
-        filename = self.gui_file_select(ext='.xls')
+        filename = self.gui_file_select(ext='.xls',ftype=[('All files','*.*'),
+                                                         ('Excel 1997-2003','*.xls'),
+                                                         ('Excel','*.xlsx')])
         if not filename: return
         import excel_interface as ex
         self.line.ex = ex.dict_position(filename=filename)
@@ -106,10 +104,17 @@ class gui:
         import matplotlib.pyplot as plt
         f1 = plt.gcf()
         fig = plt.figure()
-        plt.plot(self.line.ex.UTC,self.line.ex.alt,'x-')
-        plt.xlabel('UTC [Hours]')
+        plt.plot(self.line.ex.cumlegt,self.line.ex.alt,'x-')
+        plt.xlabel('Flight duration [Hours]')
         plt.ylabel('Alt [km]')
-        plt.figure(f1)
+        ax1 = plt.gca()
+        ax1.xaxis.tick_bottom()
+        ax2 = ax1.twiny()
+        ax2.xaxis.tick_top()
+        ax2.set_xlabel('UTC [Hours]')
+        ax2.set_xticks(self.line.ex.cumlegt)
+        ax2.set_xticklabels(self.line.ex.utc)
+        plt.figure(f1.number)
 
     def gui_savefig(self):
         'gui program to save the current figure as png'
@@ -118,7 +123,8 @@ class gui:
             return
         filename = self.gui_file_save(ext='.png')
         if not filename: return
-        self.line.m.savefig(filename,dpi=600,transparent=True)
+        import matplotlib as plt
+        plt.savefig(filename,dpi=600,transparent=True)
 
     def stopandquit(self):
         'function to force a stop and quit the mainloop, future with exit of python'
@@ -140,15 +146,15 @@ class gui:
                                    command=self.gui_saveas2kml)
         self.bsave2kml = tk.Button(self.root,text='Update Kml',
                                    command=self.gui_save2kml)
-        self.bsavefig = tk.Button(self.root,text='Save as png',
-                                      command=self.gui_savefig)
+        #self.bsavefig = tk.Button(self.root,text='Save as png',
+        #                              command=self.gui_savefig)
         #bmaketext = tk.Button(text='text',command=make_text)
         #bpressed = tk.Button(text='button on',command=make_pressed)
         self.bopenfile.pack()
         self.bsavexl.pack()
         self.bsaveas2kml.pack()
         self.bsave2kml.pack()
-        self.bsavefig.pack()
+        #self.bsavefig.pack()
         tk.Frame(self.root,height=2,width=100,bg='black',relief='sunken').pack(padx=5,pady=5)
         tk.Label(self.root,text='--- Options ---').pack()
         if self.line:

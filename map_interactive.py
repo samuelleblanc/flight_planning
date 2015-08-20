@@ -93,6 +93,7 @@ class LineBuilder:
         
     def onrelease(self,event):
         'Function to set the point location'
+        if event.inaxes!=self.line.axes: return
         if self.verbose:
             print 'release'#,event
         self.press = None

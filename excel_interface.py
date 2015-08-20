@@ -228,6 +228,7 @@ class dict_position:
                 self.appends(lat,lon,sp,dt,alt,clt,utc,loc,lt,d,cd,dnm,cdnm,spkt,altk)
             elif not wp: # check if empty
                 if not lat:
+                    print '  moving one and deleting'
                     num = num+1
                     self.dels(i)
                     self.move_xl(i)
@@ -249,6 +250,7 @@ class dict_position:
             if self.verbose:
                 print 'deleting points'
             for j in range(i+1,self.n-1):
+                print '  deleting at the end'
                 self.dels(j)
                 self.n = self.n-1
                 num = num+1
@@ -256,6 +258,7 @@ class dict_position:
             if self.verbose:
                 print 'Updated %i lines from Excel, recalculating and printing' % num
             self.calculate()
+            print '  recalculating'
             self.write_to_excel()
         self.num_changed = num
         return False
@@ -271,24 +274,27 @@ class dict_position:
         for j,l in enumerate(linesbelow):
             if type(l) is list:
                 try:
-                    l[0] = l[0]-n_rm
+                    l[0] = l[0]-1
                 except:
                     yup = True
                 linesbelow[j] = l
                 linelist = True
         if not linelist:
             try:
-                linesbelow[0] = linesbelow[0]-n_rm
+                linesbelow[0] = linesbelow[0]-1
             except:
                 yup = True
         Range('A%i:P%i'%(i+2,i+2)).value = linesbelow
-        Range('A%i:P%i'%(self.n+1-n_rm+1,self.n+1)).clear_contents()
+        Range('A%i:P%i'%(self.n+1,self.n+1)).clear_contents()
 
     def dels(self,i):
         """
         program to remove the ith item in every object
         """
         import numpy as np
+        if i+1>len(self.lat):
+            print '** Problem: index out of range **'
+            return
         self.lat = np.delete(self.lat,i)
         self.lon = np.delete(self.lon,i)
         self.speed = np.delete(self.speed,i)
@@ -308,6 +314,10 @@ class dict_position:
         self.endbearing = np.delete(self.endbearing,i)
         self.turn_deg = np.delete(self.turn_deg,i)
         self.turn_time = np.delete(self.turn_time,i)
+        try:
+            self.WP = np.delete(self.WP,i)
+        except:
+            self.WP = range(1,len(self.lon))
         print 'deletes, number of lon left:%i' %len(self.lon)
 
     def appends(self,lat,lon,sp=None,dt=None,alt=None,
@@ -348,6 +358,9 @@ class dict_position:
         If anything is not input, then the default of NaN is used
         """
         import numpy as np
+        if i+1>len(self.lat):
+            print '** Problem with index too large in mods **'
+            return
         changed = False
         self.toempty = {'speed':0,'delayt':0,'alt':0,'speed_kts':0,'alt_kft':0}
         if not lat: lat = np.nan
