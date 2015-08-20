@@ -228,7 +228,6 @@ class dict_position:
                 self.appends(lat,lon,sp,dt,alt,clt,utc,loc,lt,d,cd,dnm,cdnm,spkt,altk)
             elif not wp: # check if empty
                 if not lat:
-                    print '  moving one and deleting'
                     num = num+1
                     self.dels(i)
                     self.move_xl(i)
@@ -250,7 +249,6 @@ class dict_position:
             if self.verbose:
                 print 'deleting points'
             for j in range(i+1,self.n-1):
-                print '  deleting at the end'
                 self.dels(j)
                 self.n = self.n-1
                 num = num+1
@@ -258,7 +256,6 @@ class dict_position:
             if self.verbose:
                 print 'Updated %i lines from Excel, recalculating and printing' % num
             self.calculate()
-            print '  recalculating'
             self.write_to_excel()
         self.num_changed = num
         return False
@@ -318,7 +315,7 @@ class dict_position:
             self.WP = np.delete(self.WP,i)
         except:
             self.WP = range(1,len(self.lon))
-        print 'deletes, number of lon left:%i' %len(self.lon)
+        #print 'deletes, number of lon left:%i' %len(self.lon)
 
     def appends(self,lat,lon,sp=None,dt=None,alt=None,
                 clt=None,utc=None,loc=None,lt=None,d=None,cd=None,

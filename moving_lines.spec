@@ -7,6 +7,8 @@ a = Analysis(['moving_lines.py'],
 
 a.binaries = a.binaries - [('PyQt4',None,None),('_agg',None,None),('_wxagg',None,None),('_GTKagg',None,None),('PySide',None,None)] 
 
+print a.binaries
+
 import mpl_toolkits.basemap
 import dateutil.zoneinfo
 import os 

@@ -25,10 +25,14 @@ def Create_interaction(**kwargs):
     #plt.text(1.0,0.1,text)
     wb = ex.dict_position(**kwargs)
     lines = mi.LineBuilder(line,m=m,ex=wb)
+    print 'after line builder'
     plt.show()
-    plt.gcf().canvas._tkcanvas.master.geometry("900x1000") 
+    print 'after show'
+    plt.gcf().canvas._tkcanvas.master.geometry("900x1000")
+    print 'after canvas'
     g = gui.gui(lines)
     g.make_gui()
+    print 'after gui'
     return lines
 
 if __name__ == "__main__":
