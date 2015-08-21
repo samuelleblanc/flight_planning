@@ -9,12 +9,10 @@ To do:
 - put in ground based stations
 - add ship tracks, or position of ships
 - add capability of more flight tracks
-- add satellite ground tracks
+- add satellite ground tracks from kml files at avdc,gsfc.nasa.gov
 - add calipso ground track
-- add waypoint numbers on map
 - add flight time indicator
-- add capability of altitude vs. time plots
 - add multiple overlap of satellites
 - fixed flight paths as background
-- add export to kml function
-- add save and load functions
+- fix alt vs time utc markings
+
