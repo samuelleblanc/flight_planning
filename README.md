@@ -15,4 +15,6 @@ To do:
 - add multiple overlap of satellites
 - fixed flight paths as background
 - fix alt vs time utc markings
+- add flight path selector
+- add capabilities to load hdf files and put contour as background
 
