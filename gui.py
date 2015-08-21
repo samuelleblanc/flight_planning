@@ -16,13 +16,17 @@ class gui:
     History:
         Written: Samuel LeBlanc, 2015-08-18, NASA Ames, CA
     """
-    def __init__(self,line=None):
+    def __init__(self,line=None,root=None,noplt=False):
         import Tkinter as tk
         if not line:
             print 'No line_builder object defined'
             return
         self.line = line
-        self.root = tk.Tk()
+        if not root:
+            self.root = tk.Tk()
+        else:
+            self.root = root
+        self.noplt = noplt
     
     def gui_file_select(self,ext='*',
                         ftype=[('Excel 1997-2003','*.xls'),('Excel','*.xlsx'),
@@ -101,20 +105,39 @@ class gui:
 
     def gui_plotalttime(self):
         'gui function to run the plot of alt vs. time'
-        import matplotlib.pyplot as plt
-        f1 = plt.gcf()
-        fig = plt.figure()
-        plt.plot(self.line.ex.cumlegt,self.line.ex.alt,'x-')
-        plt.xlabel('Flight duration [Hours]')
-        plt.ylabel('Alt [km]')
-        ax1 = plt.gca()
+        if self.noplt:
+            from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+            from matplotlib.figure import Figure
+            import Tkinter as tk
+            root = tk.Toplevel()
+            root.wm_title('Alt vs. Time')
+            fig = Figure()
+            canvas = FigureCanvasTkAgg(fig, master=root)
+            canvas.show()
+            canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+            tb = NavigationToolbar2TkAgg(canvas,root)
+            tb.pack(side=tk.BOTTOM)
+            tb.update()
+            canvas._tkcanvas.pack(side=tk.TOP,fill=tk.BOTH,expand=1)
+            ax1 = fig.add_subplot(111)
+        else:
+            import matplotlib.pyplot as plt
+            f1 = plt.gcf()
+            fig = plt.figure()
+            ax1 = fig.add_subplot(1)
+        ax1.plot(self.line.ex.cumlegt,self.line.ex.alt,'x-')
+        ax1.set_xlabel('Flight duration [Hours]')
+        ax1.set_ylabel('Alt [km]')
         ax1.xaxis.tick_bottom()
         ax2 = ax1.twiny()
         ax2.xaxis.tick_top()
         ax2.set_xlabel('UTC [Hours]')
         ax2.set_xticks(self.line.ex.cumlegt)
         ax2.set_xticklabels(self.line.ex.utc)
-        plt.figure(f1.number)
+        if self.noplt:
+            canvas.draw()
+        else:
+            plt.figure(f1.number)
 
     def gui_savefig(self):
         'gui program to save the current figure as png'

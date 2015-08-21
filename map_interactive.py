@@ -1,11 +1,10 @@
-import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
 import numpy as np
 import sys
 import map_utils as mu
 
 class LineBuilder:
-    def __init__(self, line,m=None,ex=None,verbose=False):
+    def __init__(self, line,m=None,ex=None,verbose=False,tb=None):
         """
         Start the line builder, with line2d object as input,
         and opitonally the m from basemap object,
@@ -27,6 +26,11 @@ class LineBuilder:
         self.labelsoff = False
         self.lbl = None
         self.verbose = verbose
+        if not tb:
+            import matplotlib.pyplot as plt
+            self.tb = plt.get_current_fig_manager().toolbar
+        else:
+            self.tb = tb
 
     def connect(self):
         'Function to connect all events'
@@ -56,8 +60,7 @@ class LineBuilder:
         'Function that enables either selecting a point, or creating a new point when clicked'
         #print 'click', event
         if event.inaxes!=self.line.axes: return
-        tb = plt.get_current_fig_manager().toolbar
-        if tb.mode!='': return
+        if self.tb.mode!='': return
         self.contains, attrd = self.line.contains(event)
         if self.contains:
             if self.verbose:
@@ -98,8 +101,8 @@ class LineBuilder:
             print 'release'#,event
         self.press = None
         self.line.axes.format_coord = self.format_position_simple
-        tb = plt.get_current_fig_manager().toolbar
-        if tb.mode!='': return
+        
+        if self.tb.mode!='': return
         if self.contains:
             hlight = self.highlight_linepoint.findobj()[0]
             while hlight in self.line.axes.lines:
@@ -124,8 +127,7 @@ class LineBuilder:
         'Function that moves the points to desired location'
         if event.inaxes!=self.line.axes: return
         if self.press is None: return
-        tb = plt.get_current_fig_manager().toolbar
-        if tb.mode!='': return
+        if self.tb.mode!='': return
         if self.verbose:
             sys.stdout.write("\r"+" moving: x=%2.5f, y=%2.5f" %(event.xdata,event.ydata))
             sys.stdout.flush()
@@ -221,7 +223,7 @@ class LineBuilder:
                                 annotate(s+'%i'%i,(self.xs[i-1],self.ys[i-1])))
         self.line.figure.canvas.draw()
 
-def build_basemap(lower_left=[-20,-30],upper_right=[20,10]):
+def build_basemap(lower_left=[-20,-30],upper_right=[20,10],ax=None):
     """
     First try at a building of the basemap with a 'stere' projection
     Must put in the values of the lower left corner and upper right corner (lon and lat)
@@ -230,7 +232,7 @@ def build_basemap(lower_left=[-20,-30],upper_right=[20,10]):
     """
     m = Basemap(projection='stere',lon_0=(upper_right[0]+lower_left[0]),lat_0=(upper_right[1]+lower_left[1]),
             llcrnrlon=lower_left[0], llcrnrlat=lower_left[1],
-            urcrnrlon=upper_right[0], urcrnrlat=upper_right[1],resolution='h')
+            urcrnrlon=upper_right[0], urcrnrlat=upper_right[1],resolution='h',ax=ax)
     m.drawcoastlines()
     #m.fillcontinents(color='#AAAAAA')
     m.drawstates()
