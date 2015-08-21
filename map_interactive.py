@@ -69,15 +69,23 @@ class LineBuilder:
             if len(self.contains_index)>1:
                 self.contains_index = self.contains_index[-1]
             if self.verbose:
-                print 'index:', self.contains_index
-            if not self.contains_index is 0:
+                print 'index:%i'%self.contains_index
+            if self.contains_index != 0:
                 self.xy = self.xs[self.contains_index-1],self.ys[self.contains_index-1]
                 self.line.axes.format_coord = self.format_position_distance
+                self.line.axes.autoscale(enable=False)
+                self.highlight_linepoint, = self.line.axes.plot(self.xs[self.contains_index],
+                                                            self.ys[self.contains_index],'bo')
             else:
                 self.line.axes.format_coord = self.format_position_simple
-            self.line.axes.autoscale(enable=False)
-            self.highlight_linepoint, = self.line.axes.plot(self.xs[self.contains_index],
-                                                            self.ys[self.contains_index],'bo')
+                self.xy = self.xs[-1],self.ys[-1]
+                self.xs.append(self.xs[self.contains_index])
+                self.ys.append(self.ys[self.contains_index])
+                if self.m:
+                    lo,la = self.m(self.xs[self.contains_index],self.ys[self.contains_index],inverse=True)
+                    self.lons.append(lo)
+                    self.lats.append(la)
+                self.contains = False
         else:
             self.xy = self.xs[-1],self.ys[-1]
             self.xs.append(event.xdata)

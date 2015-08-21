@@ -5,13 +5,16 @@ class dict_position:
         Encompasses array values of positions, altitude, time, dist.
         Along with program to update excel spreadsheet with info, read spreadsheet data,
         and update calculations for distances
-    Inputs:
+    Inputs: (at init)
         lon0: [degree] initial longitude (optional, defaults to Namibia Walvis bay airport), can be string
         lat0: [degree] initial latitude (optional, defaults to Namibia Walvis bay airport), can be string
         speed: [m/s] speed of aircraft defaults to p3 value of 150 m/s (optional)
         UTC_start: [decimal hours] time of takeoff, defaults to 7.0 UTC (optional)
         UTC_conversion: [decimal hours] conversion (dt) used to change utc to local time (optional), local = utc + dt
-        alt0: [m] initial altitude of the plane, airport altitude (optinal) 
+        alt0: [m] initial altitude of the plane, airport altitude (optional)
+        verbose: if True then outputs many command line comments while interaction is executed, defaults to False
+        filename: (optional) if set, opens the excel file and starts the interaction with the first sheet
+        tmpname: (optional) if set, when creating an excel file, saves it in temp folder with the name defined
     Outputs:
         dict_position class 
     Dependencies:
@@ -21,6 +24,10 @@ class dict_position:
         map_interactive
         map_utils
         simplekml
+        gpxpy
+        tempfile
+        os
+        datetime
     Required files:
         none
     Example:
@@ -33,9 +40,11 @@ class dict_position:
                 - added save to kml functionality
         Modified: Samuel LeBlanc, 2015-08-18, NASA Ames, CA
                 - added open excel functionality via the filename option and extra method
+        Modified: Samuel LeBlanc, 2015-08-21, Santa Cruz, CA
+                - added save to GPX functionality
     """
     def __init__(self,lon0='14 38.717E',lat0='22 58.783S',speed=150.0,UTC_start=7.0,
-                 UTC_conversion=+1.0,alt0=0.0,verbose=False,filename=None):
+                 UTC_conversion=+1.0,alt0=0.0,verbose=False,filename=None,datestr=None):
         import numpy as np
         from xlwings import Range
         import map_interactive as mi
@@ -63,6 +72,11 @@ class dict_position:
         self.googleearthopened = False
         self.netkml = None
         self.verbose = verbose
+        if datestr:
+            self.datestr = datestr
+        else:
+            import datetime
+            self.datestr = datetime.datetime.utcnow().strftime('%Y-%m-%d')
         try:
             self.calculate()
         except:
@@ -100,7 +114,7 @@ class dict_position:
             if np.isfinite(self.speed.astype(float)[i+1]):
                 self.speed_kts[i+1] = self.speed[i+1]*1.94384449246
             elif np.isfinite(self.speed_kts.astype(float)[i+1]):
-                self.speed[i+1] = seld.speed_kts[i+1]/1.94384449246
+                self.speed[i+1] = self.speed_kts[i+1]/1.94384449246
             else:
                 self.speed[i+1] = self.speed[i]
                 self.speed_kts[i+1] = self.speed[i+1]*1.94384449246
@@ -198,26 +212,26 @@ class dict_position:
         dim = np.shape(tmp)
         if len(dim)==1:
             tmp = [tmp]
-        else:
-            dim0 = np.shape(tmp0)
-            if len(dim0)==1: dim0 = np.shape([tmp0])
-            n0,_ = dim0
-            n1,_ = dim
-            dim2 = np.shape(tmp2)
-            if len(dim2)==1: dim2 = np.shape([tmp2])
-            n2,_ = dim2
-            if n0>n1:
-                tmp = tmp0
-            if n2>n0:
-                tmp2 = Range('A2:P%i'%(n2+1)).value
-                if len(np.shape(tmp2))==1:
-                    tmp = [tmp2]
-                else:
-                    tmp = tmp2
-                if self.verbose:
-                    print 'updated to the longer points on lines:%i' %n2
+            dim = np.shape(tmp)
+        dim0 = np.shape(tmp0)
+        if len(dim0)==1: dim0 = np.shape([tmp0])
+        n0,_ = dim0
+        n1,_ = dim
+        dim2 = np.shape(tmp2)
+        if len(dim2)==1: dim2 = np.shape([tmp2])
+        n2,_ = dim2
+        if n0>n1:
+            tmp = tmp0
+        if n2>n0:
+            tmp2 = Range('A2:P%i'%(n2+1)).value
+            if len(np.shape(tmp2))==1:
+                tmp = [tmp2]
+            else:
+                tmp = tmp2
             if self.verbose:
-                print 'vertical num: %i, range num: %i' %(n0,n1)
+                print 'updated to the longer points on lines:%i' %n2
+        if self.verbose:
+            print 'vertical num: %i, range num: %i' %(n0,n1)
         num = 0
         num_del = 0
         for i,t in enumerate(tmp):
@@ -374,16 +388,19 @@ class dict_position:
             self.lon[i] = lon
             changed = True
         if self.speed[i] != sp:
-            self.speed[i] = sp
-            self.toempty['speed_kts'] = 1
-            changed = True
+            if np.isfinite(sp):
+                self.speed[i] = sp
+                self.toempty['speed_kts'] = 1
+                changed = True
         if self.speed_kts[i] != spkt:
             if np.isfinite(spkt):
+                self.speed_kts[i] = spkt
                 self.toempty['speed'] = 1
                 changed = True
         if self.delayt[i] != dt:
-            self.delayt[i] = dt
-            changed = True
+            if i != 0:
+                self.delayt[i] = dt
+                changed = True
         if self.alt[i] != alt:
             if np.isfinite(alt):
                 self.alt[i] = alt
@@ -494,7 +511,7 @@ class dict_position:
             return
         if not self.netkml:
             self.netkml = simplekml.Kml(open=1)
-            self.netkml.name = 'Flight plan'
+            self.netkml.name = 'Flight plan on '+self.datestr
             net = self.netkml.newnetworklink(name=self.name)
             net.link.href = filename
             net.link.refreshmode = simplekml.RefreshMode.onchange
@@ -554,5 +571,40 @@ class dict_position:
                 os.startfile(filename)
         else:
             os.startfile(filename)
-        
 
+    def save2gpx(self,filename=None):
+        'Program to save the waypoints and track in gpx format'
+        if not filename:
+            print '** no filename selected, returning without saving **'
+            return
+        import gpxpy as g
+        import gpxpy.gpx as gg
+        f = gg.GPX()
+        route = gg.GPXRoute(name=self.datestr)
+        for i,w in enumerate(self.WP):
+            rp = gg.GPXRoutePoint(name='WP#%i'%w,latitude=self.lat[i],
+                                  longitude=self.lon[i],
+                                  elevation = self.alt[i],
+                                  time = self.utc2datetime(self.utc[i])
+                                  )
+            route.points.append(rp)
+        f.routes.append(route)
+        fp = open(filename,'w')
+        fp.write(f.to_xml())
+        fp.close()
+        print 'GPX file saved to:'+filename      
+
+    def utc2datetime(self,utc):
+        'Program to convert the datestr and utc to valid datetime class'
+        from datetime import datetime
+        y,m,d = self.datestr.split('-')
+        year = int(y)
+        month = int(m)
+        day = int(d)
+        hour = int(utc)
+        minut = (utc-hour)*60
+        minutes = int(minut)
+        secon = (minut-minutes)*60
+        seconds = int(secon)
+        microsec = int((secon-seconds)*100)
+        return datetime(year,month,day,hour,minutes,seconds,microsec)

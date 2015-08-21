@@ -36,8 +36,10 @@ class gui:
         """
         from Tkinter import Tk
         from tkFileDialog import askopenfilename
+        import os
         Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
         filename = askopenfilename(defaultextension=ext,filetypes=ftype) # show an "Open" dialog box and return the path to the selected file
+        filename = os.path.abspath(filename)
         return filename
 
     def gui_file_save(self,ext='*',
@@ -49,8 +51,10 @@ class gui:
         """
         from Tkinter import Tk
         from tkFileDialog import asksaveasfilename
+        import os
         Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
         filename = asksaveasfilename(defaultextension=ext,filetypes=ftype) # show an "Open" dialog box and return the path to the selected file
+        filename = os.path.abspath(filename)
         return filename
 
     def make_text(self):
@@ -89,6 +93,7 @@ class gui:
                                                          ('Excel 1997-2003','*.xls'),
                                                          ('Excel','*.xlsx')])
         if not filename: return
+        print 'Saving Excel file to :'+filename
         self.line.ex.save2xl(filename)
 
     def gui_open_xl(self):
@@ -99,10 +104,22 @@ class gui:
                                                          ('Excel 1997-2003','*.xls'),
                                                          ('Excel','*.xlsx')])
         if not filename: return
+        print 'Opening Excel File:'+filename
         import excel_interface as ex
         self.line.ex = ex.dict_position(filename=filename)
         self.line.onfigureenter([1]) # to force redraw and update from the newly opened excel
 
+    def gui_save2gpx(self):
+        'Calls the save2gpx excel_interface method'
+        if not self.line:
+            print 'No line object'
+            return
+        filename = self.gui_file_save(ext='.gpx',ftype=[('All files','*.*'),
+                                                         ('GPX','*.gpx')])
+        if not filename: return
+        print 'Saving GPX file to :'+filename
+        self.line.ex.save2gpx(filename)
+        
     def gui_plotalttime(self):
         'gui function to run the plot of alt vs. time'
         if self.noplt:
