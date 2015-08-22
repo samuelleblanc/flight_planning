@@ -4,6 +4,31 @@ import sys
 import map_utils as mu
 
 class LineBuilder:
+    """
+    Purpose:
+        create interaction via plotting lines and clickable map
+    Inputs: (at init)
+        line from a single plot
+        m: basemap base class
+        ex: excel_interface class
+        verbose: (default False) writes out comments along the way
+        tb: toolbar instance to use its interactions.
+    Outputs:
+        LineBuilder class 
+    Dependencies:
+        numpy
+        map_utils
+        sys
+        Basemap
+    Required files:
+        none
+    Example:
+        ...
+    Modification History:
+        Written: Samuel LeBlanc, 2015-08-07, Santa Cruz, CA
+        Modified: Samuel LeBlanc, 2015-08-21, Santa Cruz, CA
+                 - added new plotting with range circles
+    """
     def __init__(self, line,m=None,ex=None,verbose=False,tb=None):
         """
         Start the line builder, with line2d object as input,
@@ -24,6 +49,7 @@ class LineBuilder:
         self.press = None
         self.contains = False
         self.labelsoff = False
+        self.circlesoff = False
         self.lbl = None
         self.verbose = verbose
         if not tb:
@@ -96,6 +122,7 @@ class LineBuilder:
                 self.lats.append(la)
             self.line.axes.format_coord = self.format_position_distance
         self.line.set_data(self.xs, self.ys)
+        self.line.range_circles = self.plt_range_circles()
         self.line.figure.canvas.draw()
         self.press = event.xdata,event.ydata
         if self.verbose:
@@ -127,6 +154,8 @@ class LineBuilder:
                 self.ex.appends(self.lats[-1],self.lons[-1])
                 self.ex.calculate()
                 self.ex.write_to_excel()
+        for lrc in self.line.range_circles:
+            self.m.ax.lines.remove(lrc)
         self.update_labels()
         self.line.figure.canvas.draw()
             
@@ -152,6 +181,7 @@ class LineBuilder:
         self.line.figure.canvas.draw()
 
     def onkeypress(self,event):
+        'function to handle keyboard events'
         if self.verbose:
             print 'pressed key',event.key,event.xdata,event.ydata
         if event.inaxes!=self.line.axes: return
@@ -166,6 +196,7 @@ class LineBuilder:
             self.contains = False
 
     def onkeyrelease(self,event):
+        'function to handle keyboard releases'
         #print 'released key',event.key
         if event.inaxes!=self.line.axes: return
 
@@ -186,12 +217,14 @@ class LineBuilder:
         self.update_labels()
                 
     def format_position_simple(self,x,y):
+        'format the position indicator with only position'
         if self.m:
             return 'Lon=%.7f, Lat=%.7f'%(self.m(x, y, inverse = True))
         else:   
             return 'x=%2.5f, y=%2.5f' % (x,y)
 
     def format_position_distance(self,x,y):
+        'format the position indicator with distance from previous point'
         if self.m:
             x0,y0 = self.xy
             lon0,lat0 = self.m(x0,y0,inverse=True)
@@ -204,6 +237,7 @@ class LineBuilder:
             return 'x=%2.5f, y=%2.5f, d=%2.5f' % (x,y,self.r)
         
     def update_labels(self):
+        'method to update the waypoints labels after each recalculations'
         import matplotlib as mpl
         if mpl.rcParams['text.usetex']:
             s = '\#'
@@ -230,6 +264,17 @@ class LineBuilder:
                 self.lbl.append(self.line.axes.
                                 annotate(s+'%i'%i,(self.xs[i-1],self.ys[i-1])))
         self.line.figure.canvas.draw()
+
+    def plt_range_circles(self):
+        'program to plot range circles starting from the last point selected on the map'        
+        if self.circlesoff:
+            return
+        diam = [50.0,100.0,200.0,300.0,400.0]
+        line = []
+        for d in diam:
+            ll, = mu.equi(self.m,self.lons[-2],self.lats[-2],d)
+            line.append(ll)
+        return line
 
 def build_basemap(lower_left=[-20,-30],upper_right=[20,10],ax=None):
     """

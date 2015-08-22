@@ -14,7 +14,7 @@ class dict_position:
         alt0: [m] initial altitude of the plane, airport altitude (optional)
         verbose: if True then outputs many command line comments while interaction is executed, defaults to False
         filename: (optional) if set, opens the excel file and starts the interaction with the first sheet
-        tmpname: (optional) if set, when creating an excel file, saves it in temp folder with the name defined
+        datestr: (optional) The flight day in format YYYY-MM-DD, if not set, defautl to today in utc.
     Outputs:
         dict_position class 
     Dependencies:
@@ -42,14 +42,18 @@ class dict_position:
                 - added open excel functionality via the filename option and extra method
         Modified: Samuel LeBlanc, 2015-08-21, Santa Cruz, CA
                 - added save to GPX functionality
+                - added datestr for keeping track of flight days
+                - added functionality for comments and space for sza/azi
     """
     def __init__(self,lon0='14 38.717E',lat0='22 58.783S',speed=150.0,UTC_start=7.0,
-                 UTC_conversion=+1.0,alt0=0.0,verbose=False,filename=None,datestr=None):
+                 UTC_conversion=+1.0,alt0=0.0,
+                 verbose=False,filename=None,datestr=None):
         import numpy as np
         from xlwings import Range
         import map_interactive as mi
         from map_interactive import pll
         import map_utils as mu
+        self.comments = [' ']
         self.lon = np.array([pll(lon0)])
         self.lat = np.array([pll(lat0)])
         self.speed = np.array([speed])
@@ -66,6 +70,8 @@ class dict_position:
         self.endbearing = self.lon*0.0
         self.turn_deg = self.lon*0.0
         self.turn_time = self.lon*0.0
+        self.sza = self.lon*0.0
+        self.azi = self.lon*0.0
         self.speed_kts = self.speed*1.94384449246
         self.alt_kft = self.alt*3.28084/1000.0
         self.head = self.legt
@@ -77,10 +83,7 @@ class dict_position:
         else:
             import datetime
             self.datestr = datetime.datetime.utcnow().strftime('%Y-%m-%d')
-        try:
-            self.calculate()
-        except:
-            print 'calculate failed'
+        self.calculate()
         if not filename:
             self.wb = self.Create_excel()
             try:
@@ -148,6 +151,10 @@ class dict_position:
         self.cumdist = self.dist.cumsum()
         self.cumdist_nm = self.dist_nm.cumsum()
         self.cumlegt = np.nan_to_num(self.legt).cumsum()
+
+        self.sza = self.lon*0.0-999
+        self.azi = self.lat*0.0-999
+        
         self.time2xl()
 
     def time2xl(self):
@@ -181,7 +188,10 @@ class dict_position:
                                       self.dist_nm,
                                       self.cumdist_nm,
                                       self.speed_kts,
-                                      self.alt_kft
+                                      self.alt_kft,
+                                      self.sza,
+                                      self.azi,
+                                      self.comments
                                       ]).T
         Range('G2:J%i'% (self.n+1)).number_format = 'hh:mm'
         Range('E2:E%i'% (self.n+1)).number_format = '0'
@@ -206,9 +216,9 @@ class dict_position:
         from xlwings import Range
         import numpy as np
         self.wb.set_current()
-        tmp = Range('A2:P%i'%(self.n+1)).value
-        tmp0 = Range('A2:P2').vertical.value
-        tmp2 = Range('B2:P2').vertical.value
+        tmp = Range('A2:S%i'%(self.n+1)).value
+        tmp0 = Range('A2:S2').vertical.value
+        tmp2 = Range('B2:S2').vertical.value
         dim = np.shape(tmp)
         if len(dim)==1:
             tmp = [tmp]
@@ -223,7 +233,7 @@ class dict_position:
         if n0>n1:
             tmp = tmp0
         if n2>n0:
-            tmp2 = Range('A2:P%i'%(n2+1)).value
+            tmp2 = Range('A2:S%i'%(n2+1)).value
             if len(np.shape(tmp2))==1:
                 tmp = [tmp2]
             else:
@@ -237,9 +247,10 @@ class dict_position:
         for i,t in enumerate(tmp):
             if len(t)<16: continue
             wp,lat,lon,sp,dt,alt,clt,utc,loc,lt,d,cd,dnm,cdnm,spkt,altk = t[0:16]
+            sza,azi,comm = t[16:19]
             if wp > self.n:
                 num = num+1
-                self.appends(lat,lon,sp,dt,alt,clt,utc,loc,lt,d,cd,dnm,cdnm,spkt,altk)
+                self.appends(lat,lon,sp,dt,alt,clt,utc,loc,lt,d,cd,dnm,cdnm,spkt,altk,comm=comm)
             elif not wp: # check if empty
                 if not lat:
                     num = num+1
@@ -249,9 +260,9 @@ class dict_position:
                     return True
                 else:
                     num = num+1
-                    self.appends(lat,lon,sp,dt,alt,clt,utc,loc,lt,d,cd,dnm,cdnm,spkt,altk)
+                    self.appends(lat,lon,sp,dt,alt,clt,utc,loc,lt,d,cd,dnm,cdnm,spkt,altk,comm=comm)
             else:
-                changed = self.mods(i,lat,lon,sp,spkt,dt,alt,altk)
+                changed = self.mods(i,lat,lon,sp,spkt,dt,alt,altk,comm)
                 if i == 0:
                     if self.utc[i] != utc*24.0:
                         self.utc[i] = utc*24.0
@@ -279,7 +290,7 @@ class dict_position:
         Program that moves up all excel rows by one line overriding the ith line
         """
         from xlwings import Range
-        linesbelow = Range('A%i:P%i'%(i+3,self.n+1)).value
+        linesbelow = Range('A%i:S%i'%(i+3,self.n+1)).value
         n_rm = (self.n+1)-(i+3)
         linelist = False
         for j,l in enumerate(linesbelow):
@@ -295,8 +306,8 @@ class dict_position:
                 linesbelow[0] = linesbelow[0]-1
             except:
                 yup = True
-        Range('A%i:P%i'%(i+2,i+2)).value = linesbelow
-        Range('A%i:P%i'%(self.n+1,self.n+1)).clear_contents()
+        Range('A%i:S%i'%(i+2,i+2)).value = linesbelow
+        Range('A%i:S%i'%(self.n+1,self.n+1)).clear_contents()
 
     def dels(self,i):
         """
@@ -325,6 +336,9 @@ class dict_position:
         self.endbearing = np.delete(self.endbearing,i)
         self.turn_deg = np.delete(self.turn_deg,i)
         self.turn_time = np.delete(self.turn_time,i)
+        self.sza = np.delete(self.sza,i)
+        self.azi = np.delete(self.azi,i)
+        self.comments.pop(i)
         try:
             self.WP = np.delete(self.WP,i)
         except:
@@ -334,7 +348,8 @@ class dict_position:
     def appends(self,lat,lon,sp=None,dt=None,alt=None,
                 clt=None,utc=None,loc=None,lt=None,d=None,cd=None,
                 dnm=None,cdnm=None,spkt=None,altk=None,
-                bear=0.0,endbear=0.0,turnd=0.0,turnt=0.0):
+                bear=0.0,endbear=0.0,turnd=0.0,turnt=0.0,
+                sza=None,azi=None,comm=None):
         """
         Program that appends to the current class with values supplied, or with defaults from the command line
         """
@@ -362,11 +377,17 @@ class dict_position:
         self.endbearing = np.append(self.endbearing,endbear)
         self.turn_deg = np.append(self.turn_deg,turnd)
         self.turn_time = np.append(self.turn_time,turnt)
+        self.sza = np.append(self.sza,sza)
+        self.azi = np.append(self.azi,azi)
+        self.comments.append(comm)
 
-    def mods(self,i,lat=None,lon=None,sp=None,spkt=None,dt=None,alt=None,altk=None):
+    def mods(self,i,lat=None,lon=None,sp=None,spkt=None,
+             dt=None,alt=None,altk=None,comm=None):
         """
-        Program to modify the contents of the current class if there is an update on the line, defned by i
+        Program to modify the contents of the current class if
+        there is an update on the line, defned by i
         If anything is not input, then the default of NaN is used
+        comments are treated as none
         """
         import numpy as np
         if i+1>len(self.lat):
@@ -416,6 +437,9 @@ class dict_position:
                 v = getattr(self,s)
                 v[i] = np.nan
                 setattr(self,s,v)
+        if not self.comments[i] == comm:
+            self.comments[i] = comm
+            changed = True
         return changed
 
     def Open_excel(self,filename=None):
@@ -445,6 +469,11 @@ class dict_position:
             print 'Exception found:',ie
             return
         self.name = Sheet(1).name
+        self.datestr = Range('U1').value
+        if not self.datestr:
+            print 'No datestring found! Using todays date'
+            from datetime import datetime
+            self.datestr = datetime.utcnow().strftime('%Y-%m-%d')
         return wb
         
     def Create_excel(self,name='P3 Flight path'):
@@ -479,7 +508,7 @@ class dict_position:
                              'CumLegT\n[hh:mm]','UTC\n[hh:mm]','LocalT\n[hh:mm]',
                              'LegT\n[hh:mm]','Dist\n[km]','CumDist\n[km]',
                              'Dist\n[nm]','CumDist\n[nm]','Speed\n[kt]',
-                             'Altitude\n[kft]','Comments']
+                             'Altitude\n[kft]','SZA\n[deg]','AZI\n[deg]','Comments']
         top_line = Range('A1').horizontal
         address = top_line.get_address(False,False)
         import sys
@@ -491,6 +520,8 @@ class dict_position:
             xl.Range(address).Font.Bold = True
         top_line.autofit()
         Range('G2:J2').number_format = 'hh:mm'
+        Range('U1').value = self.datestr
+        Range('U:U').autofit('c')
         #Range('A2').value = np.arange(50).reshape((50,1))+1
         return wb
 
@@ -537,6 +568,7 @@ class dict_position:
             pnt = self.kml.newpoint()
             pnt.name = 'WP \# %i' % self.WP[i]
             pnt.coords = [(self.lon[i],self.lat[i])]
+            pnt.description = self.comments[i]
 
     def print_path_kml(self):
         """
@@ -585,7 +617,8 @@ class dict_position:
             rp = gg.GPXRoutePoint(name='WP#%i'%w,latitude=self.lat[i],
                                   longitude=self.lon[i],
                                   elevation = self.alt[i],
-                                  time = self.utc2datetime(self.utc[i])
+                                  time = self.utc2datetime(self.utc[i]),
+                                  comments = self.comments[i]
                                   )
             route.points.append(rp)
         f.routes.append(route)

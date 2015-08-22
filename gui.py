@@ -108,6 +108,8 @@ class gui:
         import excel_interface as ex
         self.line.ex = ex.dict_position(filename=filename)
         self.line.onfigureenter([1]) # to force redraw and update from the newly opened excel
+        self.line.m.ax.set_title(self.ex.datestr)
+        self.line.figure.canvas.draw()
 
     def gui_save2gpx(self):
         'Calls the save2gpx excel_interface method'

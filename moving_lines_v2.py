@@ -99,15 +99,13 @@ def Create_interaction(**kwargs):
 
     m = mi.build_basemap(ax=ui.ax1)
     line = init_plot(m)
-    
-    wb = ex.dict_position(**kwargs)
-    lines = mi.LineBuilder(line,m=m,ex=wb,tb=ui.tb)
-
-    build_buttons(ui,lines)
 
     get_datestr(ui)
+    wb = ex.dict_position(datestr=ui.datestr,**kwargs)
+    lines = mi.LineBuilder(line,m=m,ex=wb,tb=ui.tb)
     savetmp(ui,wb)
     
+    build_buttons(ui,lines)    
     ui.root.mainloop()
     return lines
 
