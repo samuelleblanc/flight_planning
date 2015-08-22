@@ -43,17 +43,17 @@ a.datas = a.datas + [('dateutil/zoneinfo/zoneinfo--latest.tar.gz',dateutil.zonei
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
-          exclude_binaries=True,
+	  a.binaries,
+	  a.zipfiles,
+          exclude_binaries=False,
           name='moving_lines.exe',
           debug=False,
-          strip=None,
+          strip=True,
           upx=True,
           console=True )
 
 coll = COLLECT(exe,
-               a.binaries,
-               a.zipfiles,
                a.datas,
                strip=None,
                upx=True,
-               name='moving_lines')
+               name='moving_lines_v2')
