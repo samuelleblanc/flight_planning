@@ -150,13 +150,14 @@ class gui:
             ax1 = fig.add_subplot(1)
         ax1.plot(self.line.ex.cumlegt,self.line.ex.alt,'x-')
         ax1.set_xlabel('Flight duration [Hours]')
-        ax1.set_ylabel('Alt [km]')
+        ax1.set_ylabel('Alt [m]')
         ax1.xaxis.tick_bottom()
         ax2 = ax1.twiny()
         ax2.xaxis.tick_top()
         ax2.set_xlabel('UTC [Hours]')
         ax2.set_xticks(self.line.ex.cumlegt)
         ax2.set_xticklabels(self.line.ex.utc)
+        #ax2.yaxis.tick_right()
         if self.noplt:
             canvas.draw()
         else:

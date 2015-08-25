@@ -178,7 +178,9 @@ class dict_position:
         """
         import numpy as np
         from xlwings import Range
+        print 'before set to current'
         self.wb.set_current()
+        print 'after set to current'
         Range('A2').value = np.array([self.WP,
                                       self.lat,
                                       self.lon,
@@ -516,7 +518,9 @@ class dict_position:
         else:
             wb = Workbook()
             self.name = name
+            print 'before rename'
             Sheet(1).name = self.name
+            print 'after rename'
         Range('A1').value = ['WP','Lat\n[+-90]','Lon\n[+-180]',
                              'Speed\n[m/s]','delayT\n[min]','Altitude\n[m]',
                              'CumLegT\n[hh:mm]','UTC\n[hh:mm]','LocalT\n[hh:mm]',
@@ -549,7 +553,9 @@ class dict_position:
         Simple to program to initiate the save function in Excel
         Same as save button in Excel
         """
+        print 'before save'
         self.wb.save(filename)
+        print 'after save'
 
     def save2kml(self,filename=None):
         """
