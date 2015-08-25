@@ -44,10 +44,15 @@ class dict_position:
                 - added save to GPX functionality
                 - added datestr for keeping track of flight days
                 - added functionality for comments and space for sza/azi
+        Modified: Samuel LeBlanc, 2015-08-24, Santa Cruz, CA
+                - added multi flight path handling funcitonality, by generating new sheets
+                - added newsheetonly keyword and name keyword
+                
     """
     def __init__(self,lon0='14 38.717E',lat0='22 58.783S',speed=150.0,UTC_start=7.0,
                  UTC_conversion=+1.0,alt0=0.0,
-                 verbose=False,filename=None,datestr=None):
+                 verbose=False,filename=None,datestr=None,
+                 newsheetonly=False,name='P3 Flight path'):
         import numpy as np
         from xlwings import Range
         import map_interactive as mi
@@ -85,7 +90,7 @@ class dict_position:
             self.datestr = datetime.datetime.utcnow().strftime('%Y-%m-%d')
         self.calculate()
         if not filename:
-            self.wb = self.Create_excel()
+            self.wb = self.Create_excel(newsheetonly=newsheetonly,name=name)
             try:
                 self.write_to_excel()
             except:
@@ -476,7 +481,7 @@ class dict_position:
             self.datestr = datetime.utcnow().strftime('%Y-%m-%d')
         return wb
         
-    def Create_excel(self,name='P3 Flight path'):
+    def Create_excel(self,name='P3 Flight path',newsheetonly=False):
         """
         Purpose:
             Program that creates the link to an excel file
@@ -500,9 +505,14 @@ class dict_position:
         """
         from xlwings import Workbook, Sheet, Range, Chart
         import numpy as np
-        wb = Workbook()
-        self.name = name
-        Sheet(1).name = self.name
+        if newsheetonly:
+            Sheet.add(name,after=self.sheet_num)
+            self.sheet_num = self.sheet_num+1
+        else:
+            wb = Workbook()
+            self.name = name
+            Sheet(1).name = self.name
+            self.sheet_num = 1
         Range('A1').value = ['WP','Lat\n[+-90]','Lon\n[+-180]',
                              'Speed\n[m/s]','delayT\n[min]','Altitude\n[m]',
                              'CumLegT\n[hh:mm]','UTC\n[hh:mm]','LocalT\n[hh:mm]',
@@ -524,6 +534,11 @@ class dict_position:
         Range('U:U').autofit('c')
         #Range('A2').value = np.arange(50).reshape((50,1))+1
         return wb
+
+    def switchsheet(self,i):
+        'Switch the active sheet with name supplied'
+        from xlwings import Sheet
+        Sheet(i).active()
 
     def save2xl(self,filename=None):
         """

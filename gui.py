@@ -22,6 +22,8 @@ class gui:
             print 'No line_builder object defined'
             return
         self.line = line
+        self.flight_num = 0
+        self.iactive = 0
         if not root:
             self.root = tk.Tk()
         else:
@@ -158,6 +160,32 @@ class gui:
         else:
             plt.figure(f1.number)
 
+    def gui_newflight(self):
+        'Program to call and create a new excel spreadsheet'
+        import tkSimpleDialog
+        import excel_interface as ex
+        newname = tkSimpleDialog.askstring('New flight path',
+                                           'New flight path name:')
+        if not newname:
+            print 'Cancelled'
+            return
+        self.flight_num = self.flight_num+1
+        self.line.ex_arr[self.flight_num] = ex.dict_position(datestr=self.ex.datestr,
+                                                            name=newname,
+                                                            newsheetonly=True)
+### not finished yet
+        self.iactive = self.flight_num
+        self.gui_changeflight()
+        print 'Not yet'
+
+    def gui_changeflight(self):
+        'method to switch out the active flight path that is used'
+        self.line.ex = self.line.ex_arr[self.iactive)
+        self.line.makegrey(self.iactive)
+        self.line.line = self.line.line_arr[iactive]
+        ### net finished yet
+        print 'not yet finished'
+        
     def gui_savefig(self):
         'gui program to save the current figure as png'
         if not self.line:

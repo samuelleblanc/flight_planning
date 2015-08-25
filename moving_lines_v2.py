@@ -17,7 +17,7 @@ import gui
 
 version = 'v0.2'
 
-def Create_gui():
+def Create_gui(vertical=True):
     'Program to set up gui interaction with figure embedded'
     class ui:
         pass
@@ -27,8 +27,12 @@ def Create_gui():
     ui.root.geometry('900x950')
     ui.top = tk.Frame(ui.root)
     ui.bot = tk.Frame(ui.root)
-    ui.top.pack(side=tk.TOP,expand=False)
-    ui.bot.pack(side=tk.BOTTOM,fill=tk.BOTH,expand=True)
+    if vertical:
+        ui.top.pack(side=tk.LEFT,expand=False)
+        ui.bot.pack(side=tk.RIGHT,fill=tk.BOTH,expand=True)
+    else:
+        ui.top.pack(side=tk.TOP,expand=False)
+        ui.bot.pack(side=tk.BOTTOM,fill=tk.BOTH,expand=True)
     ui.fig = Figure()
     ui.ax1 = ui.fig.add_subplot(111)
     ui.canvas = FigureCanvasTkAgg(ui.fig,master=ui.root)
@@ -40,10 +44,18 @@ def Create_gui():
     ui.canvas._tkcanvas.pack(in_=ui.bot,side=tk.TOP,fill=tk.BOTH,expand=1)
     return ui
 
-def build_buttons(ui,lines):
+def build_buttons(ui,lines,vertical=True):
     'Program to set up the buttons'
     import gui
     import Tkinter as tk
+    if vertical:
+        side = tk.TOP
+        h = 2
+        w = 20
+    else:
+        side = tk.LEFT
+        h = 20
+        w = 2
     g = gui.gui(lines,root=ui.root,noplt=True)
     g.bopenfile = tk.Button(g.root,text='Open Excel file',
                             command=g.gui_open_xl)
@@ -55,19 +67,28 @@ def build_buttons(ui,lines):
                             command=g.gui_save2kml)
     g.bsave2gpx = tk.Button(g.root,text='Save to GPX',
                             command=g.gui_save2gpx)
-    g.bopenfile.pack(in_=ui.top,side=tk.LEFT)
-    g.bsavexl.pack(in_=ui.top,side=tk.LEFT)
-    g.bsaveas2kml.pack(in_=ui.top,side=tk.LEFT)
-    g.bsave2kml.pack(in_=ui.top,side=tk.LEFT)
-    g.bsave2gpx.pack(in_=ui.top,side=tk.LEFT)
-    tk.Frame(g.root,height=20,width=2,bg='black',relief='sunken'
-             ).pack(in_=ui.top,side=tk.LEFT,padx=8,pady=5)
+    g.bopenfile.pack(in_=ui.top,side=side)
+    g.bsavexl.pack(in_=ui.top,side=side)
+    g.bsaveas2kml.pack(in_=ui.top,side=side)
+    g.bsave2kml.pack(in_=ui.top,side=side)
+    g.bsave2gpx.pack(in_=ui.top,side=side)
+    tk.Frame(g.root,height=h,width=w,bg='black',relief='sunken'
+             ).pack(in_=ui.top,side=side,padx=8,pady=5)
     g.bplotalt = tk.Button(g.root,text='Plot alt vs time',
                            command=g.gui_plotalttime)
-    g.bplotalt.pack(in_=ui.top,side=tk.LEFT)
-    tk.Frame(g.root,height=20,width=2,bg='black',relief='sunken'
-             ).pack(in_=ui.top,side=tk.LEFT,padx=8,pady=5)
-    tk.Button(g.root,text='Quit',command=g.stopandquit).pack(in_=ui.top,side=tk.LEFT)
+    g.bplotalt.pack(in_=ui.top,side=side)
+    tk.Frame(g.root,height=h,width=w,bg='black',relief='sunken'
+             ).pack(in_=ui.top,side=side,padx=8,pady=5)
+
+    g.flightselect = tk.Radiobutton(g.root,
+                                    text=lines.ex.name,variable=v,value=0
+                                    ).pack(in_=ui.top,side=side)
+    g.newflightpath = tk.Button(g.root,text='New flight path',
+                                command = g.gui_newflight)
+    g.newflightpath.pack(in_=ui.top,padx=5,pady=5)
+    
+    tk.Button(g.root,text='Quit',command=g.stopandquit
+              ).pack(in_=ui.top,side=side)
 
 def get_datestr(ui):
     import tkSimpleDialog

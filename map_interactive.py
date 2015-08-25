@@ -38,8 +38,12 @@ class LineBuilder:
         
         """
         self.line = line
+        self.line_arr = []
+        self.line_arr.append(line)
         self.m = m
         self.ex = ex
+        self.ex_arr = []
+        self.ex.arr.append(ex)
         self.xs = list(line.get_xdata())
         self.ys = list(line.get_ydata())
         if self.m:
@@ -275,6 +279,11 @@ class LineBuilder:
             ll, = mu.equi(self.m,self.lons[-2],self.lats[-2],d)
             line.append(ll)
         return line
+
+    def makegrey(self):
+        'Program to grey out the entire path'
+        self.line.set_color('#AAAAAA')
+        ### need to debug here
 
 def build_basemap(lower_left=[-20,-30],upper_right=[20,10],ax=None):
     """
