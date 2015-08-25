@@ -502,6 +502,8 @@ class dict_position:
             Written: Samuel LeBlanc, 2015-07-15, Santa Cruz, CA
             Modified: Samuel LeBlanc, 2015-08-07, Santa Cruz, CA
                     - put into the dic_position class, modified slightly
+            Modified: Samuel LeBlanc, 2015-08-25, NASA Ames, CA
+                    - modify to permit creation of a new sheet within the current workbook
             
         """
         from xlwings import Workbook, Sheet, Range, Chart
@@ -509,6 +511,7 @@ class dict_position:
         if newsheetonly:
             Sheet(1).add(name=name)
             self.sheet_num = self.sheet_num+1
+            wb = Workbook.current()
         else:
             wb = Workbook()
             self.name = name

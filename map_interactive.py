@@ -294,7 +294,7 @@ class LineBuilder:
     def newline(self):
         'Program to do a deep copy of the line object in the LineBuilder class'
         import copy
-        self.line_arr.append(copy.deepcopy(line))
+        self.line_arr.append(copy.copy(self.line))
 
 def build_basemap(lower_left=[-20,-30],upper_right=[20,10],ax=None):
     """

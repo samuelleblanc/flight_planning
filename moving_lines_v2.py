@@ -79,7 +79,7 @@ def build_buttons(ui,lines,vertical=True):
     g.bplotalt.pack(in_=ui.top,side=side)
     tk.Frame(g.root,height=h,width=w,bg='black',relief='sunken'
              ).pack(in_=ui.top,side=side,padx=8,pady=5)
-    g.frame_select = tk.Frame(g.root,relief=tk.SUNKEN)
+    g.frame_select = tk.Frame(g.root,relief=tk.SUNKEN,bg='white')
     g.frame_select.pack(in_=ui.top,side=side,fill=tk.BOTH)
     g.flightselect_arr = []
     g.flightselect_arr.append(tk.Radiobutton(g.root,text=lines.ex.name,
@@ -87,7 +87,7 @@ def build_buttons(ui,lines,vertical=True):
                                              indicatoron=0,
                                              command=g.gui_changeflight,
                                              state=tk.ACTIVE))
-    g.flightselect_arr[0].pack(in_=g.frame_select,side=side)
+    g.flightselect_arr[0].pack(in_=g.frame_select,side=side,padx=2,pady=2,fill=tk.BOTH)
     g.flightselect_arr[0].select()
     g.newflightpath = tk.Button(g.root,text='New flight path',
                                 command = g.gui_newflight)

@@ -167,6 +167,9 @@ class gui:
         import tkSimpleDialog
         import excel_interface as ex
         import Tkinter as tk
+        print 'Not yet'
+        return
+        
         newname = tkSimpleDialog.askstring('New flight path',
                                            'New flight path name:')
         if not newname:
@@ -179,11 +182,12 @@ class gui:
                                                     value=self.flight_num,
                                                     indicatoron=0,
                                                     command=self.gui_changeflight))
-        self.flightselect_arr[self.flight_num].pack(in_=self.frame_select,side=tk.BOTTOM)
-        self.line.ex_arr[self.flight_num] = ex.dict_position(datestr=self.line.ex.datestr,
-                                                             name=newname,
-                                                             newsheetonly=True,
-                                                             sheet_num=self.flight_num)
+        self.flightselect_arr[self.flight_num].pack(in_=self.frame_select,side=tk.BOTTOM,
+                                                    padx=2,pady=2,fill=tk.BOTH)
+        self.line.ex_arr.append(ex.dict_position(datestr=self.line.ex.datestr,
+                                                 name=newname,
+                                                 newsheetonly=True,
+                                                 sheet_num=self.flight_num))
         self.line.newline()
         self.iactive = self.flight_num
         self.gui_changeflight()
@@ -191,13 +195,13 @@ class gui:
 
     def gui_changeflight(self):
         'method to switch out the active flight path that is used'
+        self.flightselect_arr[self.iactive].select()
         self.line.iactive = self.iactive
         self.line.ex = self.line.ex_arr[self.iactive]
         self.line.makegrey()
         self.line.line = self.line.line_arr[self.iactive]
         self.line.ex.switchsheet(self.iactive)
         self.line.colorme(self.colors[self.iactive])
-        print 'not yet finished'
         
     def gui_savefig(self):
         'gui program to save the current figure as png'
