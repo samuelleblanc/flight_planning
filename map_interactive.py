@@ -296,22 +296,24 @@ class LineBuilder:
         import copy
         self.line_arr.append(copy.copy(self.line))
 
-def build_basemap(lower_left=[-20,-30],upper_right=[20,10],ax=None):
+def build_basemap(lower_left=[-20,-30],upper_right=[20,10],ax=None,proj='cyl'):
     """
     First try at a building of the basemap with a 'stere' projection
     Must put in the values of the lower left corner and upper right corner (lon and lat)
     
     Defaults to draw 8 meridians and parallels
     """
-    m = Basemap(projection='stere',lon_0=(upper_right[0]+lower_left[0]),lat_0=(upper_right[1]+lower_left[1]),
+    m = Basemap(projection=proj,lon_0=(upper_right[0]+lower_left[0]),lat_0=(upper_right[1]+lower_left[1]),
             llcrnrlon=lower_left[0], llcrnrlat=lower_left[1],
             urcrnrlon=upper_right[0], urcrnrlat=upper_right[1],resolution='h',ax=ax)
     m.drawcoastlines()
     #m.fillcontinents(color='#AAAAAA')
     m.drawstates()
     m.drawcountries()
-    mer = np.linspace(lower_left[0],upper_right[0],8).astype(int)
-    par = np.linspace(lower_left[1],upper_right[1],8).astype(int)
+    mer = np.linspace(-15,20,8).astype(int)
+    #mer = np.linspace(lower_left[0],upper_right[0],8).astype(int)
+    par = np.linspace(-25,5,7).astype(int)
+    #par = np.linspace(lower_left[1],upper_right[1],8).astype(int)
     m.drawmeridians(mer,labels=[0,0,0,1])
     m.drawparallels(par,labels=[1,0,0,0])
     return m
