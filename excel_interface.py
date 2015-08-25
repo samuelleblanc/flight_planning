@@ -196,9 +196,10 @@ class dict_position:
                                       self.speed_kts,
                                       self.alt_kft,
                                       self.sza,
-                                      self.azi,
-                                      self.comments
+                                      self.azi
                                       ]).T
+        for i,c in enumerate(self.comments):
+            Range('S%i'%(i+2)).value = c
         Range('G2:J%i'% (self.n+1)).number_format = 'hh:mm'
         Range('E2:E%i'% (self.n+1)).number_format = '0'
         Range('B:B').autofit('c')
