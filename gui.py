@@ -24,6 +24,8 @@ class gui:
         self.line = line
         self.flight_num = 0
         self.iactive = 0
+        self.colors = ['r']
+        self.colorcycle = ['r','b','g','c','m','y']
         if not root:
             self.root = tk.Tk()
         else:
@@ -110,7 +112,7 @@ class gui:
         import excel_interface as ex
         self.line.ex = ex.dict_position(filename=filename)
         self.line.onfigureenter([1]) # to force redraw and update from the newly opened excel
-        self.line.m.ax.set_title(self.ex.datestr)
+        self.line.m.ax.set_title(self.line.ex.datestr)
         self.line.figure.canvas.draw()
 
     def gui_save2gpx(self):
@@ -164,26 +166,37 @@ class gui:
         'Program to call and create a new excel spreadsheet'
         import tkSimpleDialog
         import excel_interface as ex
+        import Tkinter as tk
         newname = tkSimpleDialog.askstring('New flight path',
                                            'New flight path name:')
         if not newname:
             print 'Cancelled'
             return
         self.flight_num = self.flight_num+1
-        self.line.ex_arr[self.flight_num] = ex.dict_position(datestr=self.ex.datestr,
-                                                            name=newname,
-                                                            newsheetonly=True)
-### not finished yet
+        self.colors.append(self.colorcycle[self.flight_num])
+        self.flightselect_arr.append(tk.Radiobutton(self.root,text=newname,
+                                                    variable=self.iactive,
+                                                    value=self.flight_num,
+                                                    indicatoron=0,
+                                                    command=self.gui_changeflight))
+        self.flightselect_arr[self.flight_num].pack(in_=self.frame_select,side=tk.BOTTOM)
+        self.line.ex_arr[self.flight_num] = ex.dict_position(datestr=self.line.ex.datestr,
+                                                             name=newname,
+                                                             newsheetonly=True,
+                                                             sheet_num=self.flight_num)
+        self.line.newline()
         self.iactive = self.flight_num
         self.gui_changeflight()
-        print 'Not yet'
+        
 
     def gui_changeflight(self):
         'method to switch out the active flight path that is used'
-        self.line.ex = self.line.ex_arr[self.iactive)
-        self.line.makegrey(self.iactive)
-        self.line.line = self.line.line_arr[iactive]
-        ### net finished yet
+        self.line.iactive = self.iactive
+        self.line.ex = self.line.ex_arr[self.iactive]
+        self.line.makegrey()
+        self.line.line = self.line.line_arr[self.iactive]
+        self.line.ex.switchsheet(self.iactive)
+        self.line.colorme(self.colors[self.iactive])
         print 'not yet finished'
         
     def gui_savefig(self):

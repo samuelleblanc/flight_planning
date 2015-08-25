@@ -52,7 +52,7 @@ class dict_position:
     def __init__(self,lon0='14 38.717E',lat0='22 58.783S',speed=150.0,UTC_start=7.0,
                  UTC_conversion=+1.0,alt0=0.0,
                  verbose=False,filename=None,datestr=None,
-                 newsheetonly=False,name='P3 Flight path'):
+                 newsheetonly=False,name='P3 Flight path',sheet_num=1):
         import numpy as np
         from xlwings import Range
         import map_interactive as mi
@@ -90,6 +90,7 @@ class dict_position:
             self.datestr = datetime.datetime.utcnow().strftime('%Y-%m-%d')
         self.calculate()
         if not filename:
+            self.sheet_num = sheet_num
             self.wb = self.Create_excel(newsheetonly=newsheetonly,name=name)
             try:
                 self.write_to_excel()
@@ -506,13 +507,12 @@ class dict_position:
         from xlwings import Workbook, Sheet, Range, Chart
         import numpy as np
         if newsheetonly:
-            Sheet.add(name,after=self.sheet_num)
+            Sheet(1).add(name=name)
             self.sheet_num = self.sheet_num+1
         else:
             wb = Workbook()
             self.name = name
             Sheet(1).name = self.name
-            self.sheet_num = 1
         Range('A1').value = ['WP','Lat\n[+-90]','Lon\n[+-180]',
                              'Speed\n[m/s]','delayT\n[min]','Altitude\n[m]',
                              'CumLegT\n[hh:mm]','UTC\n[hh:mm]','LocalT\n[hh:mm]',
@@ -538,7 +538,7 @@ class dict_position:
     def switchsheet(self,i):
         'Switch the active sheet with name supplied'
         from xlwings import Sheet
-        Sheet(i).active()
+        Sheet(i+1).activate()
 
     def save2xl(self,filename=None):
         """

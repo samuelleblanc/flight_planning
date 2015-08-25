@@ -40,10 +40,11 @@ class LineBuilder:
         self.line = line
         self.line_arr = []
         self.line_arr.append(line)
+        self.iactive = 0
         self.m = m
         self.ex = ex
         self.ex_arr = []
-        self.ex.arr.append(ex)
+        self.ex_arr.append(ex)
         self.xs = list(line.get_xdata())
         self.ys = list(line.get_ydata())
         if self.m:
@@ -209,6 +210,7 @@ class LineBuilder:
         if self.verbose:
             print 'entered figure'#, event
         if self.ex:
+            self.ex.switchsheet(self.iactive)
             self.ex.check_xl()
             self.lats = list(self.ex.lat)
             self.lons = list(self.ex.lon)
@@ -284,6 +286,15 @@ class LineBuilder:
         'Program to grey out the entire path'
         self.line.set_color('#AAAAAA')
         ### need to debug here
+        
+    def colorme(self,c):
+        'Program to color the entire path'
+        self.line.set_color(c)
+
+    def newline(self):
+        'Program to do a deep copy of the line object in the LineBuilder class'
+        import copy
+        self.line_arr.append(copy.deepcopy(line))
 
 def build_basemap(lower_left=[-20,-30],upper_right=[20,10],ax=None):
     """
