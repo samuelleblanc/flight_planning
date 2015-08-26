@@ -144,20 +144,21 @@ class gui:
             canvas._tkcanvas.pack(side=tk.TOP,fill=tk.BOTH,expand=1)
             ax1 = fig.add_subplot(111)
         else:
-            import matplotlib.pyplot as plt
-            f1 = plt.gcf()
-            fig = plt.figure()
-            ax1 = fig.add_subplot(1)
+            #import matplotlib.pyplot as plt
+            #f1 = plt.gcf()
+            #fig = plt.figure()
+            #ax1 = fig.add_subplot(1)
+            print 'Problem with loading a new figure handler'
+            return
         ax1.plot(self.line.ex.cumlegt,self.line.ex.alt,'x-')
         ax1.set_xlabel('Flight duration [Hours]')
-        ax1.set_ylabel('Alt [m]')
+        ax1.set_ylabel('Alt [km]')
         ax1.xaxis.tick_bottom()
         ax2 = ax1.twiny()
         ax2.xaxis.tick_top()
         ax2.set_xlabel('UTC [Hours]')
         ax2.set_xticks(self.line.ex.cumlegt)
         ax2.set_xticklabels(self.line.ex.utc)
-        #ax2.yaxis.tick_right()
         if self.noplt:
             canvas.draw()
         else:
@@ -218,8 +219,14 @@ class gui:
         'function to force a stop and quit the mainloop, future with exit of python'
         self.root.quit()
         self.root.destroy()
-        import sys
+        self.line.ex.wb.close()
+        #import sys
         #sys.exit()
+
+    def refresh(self):
+        'function to force a refresh of the plotting window'
+        self.line.onfigureenter([1])
+        
     
     def make_gui(self):
         """

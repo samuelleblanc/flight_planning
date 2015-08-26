@@ -1,8 +1,8 @@
-import matplotlib
-import os,sys
-fp = os.path.dirname(os.path.abspath(__file__))
-matplotlib.rc_file(fp+os.path.sep+'file.rc')
-matplotlib.use('TkAgg')
+#import matplotlib
+#import os,sys
+#fp = os.path.dirname(os.path.abspath(__file__))
+#matplotlib.rc_file(fp+os.path.sep+'file.rc')
+#matplotlib.use('TkAgg')
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
 import Tkinter as tk
@@ -23,7 +23,7 @@ def Create_gui(vertical=True):
         pass
     ui = ui
     ui.root = tk.Tk()
-    ui.root.wm_title('Flight planning by Samuel LeBlanc, NASA Ames,'+version)
+    ui.root.wm_title('Flight planning by Samuel LeBlanc, NASA Ames, '+version)
     ui.root.geometry('900x950')
     ui.top = tk.Frame(ui.root)
     ui.bot = tk.Frame(ui.root)
@@ -57,6 +57,9 @@ def build_buttons(ui,lines,vertical=True):
         h = 20
         w = 2
     g = gui.gui(lines,root=ui.root,noplt=True)
+    g.refresh = tk.Button(g.root,text='Refresh',
+                          command=g.refresh,
+                          bg='chartreuse')
     g.bopenfile = tk.Button(g.root,text='Open Excel file',
                             command=g.gui_open_xl)
     g.bsavexl = tk.Button(g.root,text='Save Excel file',
@@ -67,6 +70,7 @@ def build_buttons(ui,lines,vertical=True):
                             command=g.gui_save2kml)
     g.bsave2gpx = tk.Button(g.root,text='Save to GPX',
                             command=g.gui_save2gpx)
+    g.refresh.pack(in_=ui.top,side=side,fill=tk.X,pady=8)
     g.bopenfile.pack(in_=ui.top,side=side)
     g.bsavexl.pack(in_=ui.top,side=side)
     g.bsaveas2kml.pack(in_=ui.top,side=side)
@@ -87,13 +91,14 @@ def build_buttons(ui,lines,vertical=True):
                                              indicatoron=0,
                                              command=g.gui_changeflight,
                                              state=tk.ACTIVE))
-    g.flightselect_arr[0].pack(in_=g.frame_select,side=side,padx=2,pady=2,fill=tk.BOTH)
+    g.flightselect_arr[0].pack(in_=g.frame_select,side=side,padx=4,pady=2,fill=tk.BOTH)
     g.flightselect_arr[0].select()
     g.newflightpath = tk.Button(g.root,text='New flight path',
                                 command = g.gui_newflight)
     g.newflightpath.pack(in_=ui.top,padx=5,pady=5)
-    
-    tk.Button(g.root,text='Quit',command=g.stopandquit
+    tk.Frame(g.root,height=h,width=w,bg='black',relief='sunken'
+             ).pack(in_=ui.top,side=side,padx=8,pady=5)
+    tk.Button(g.root,text='Quit',command=g.stopandquit,bg='lightcoral'
               ).pack(in_=ui.top,side=side)
 
 def get_datestr(ui):

@@ -58,8 +58,9 @@ class LineBuilder:
         self.lbl = None
         self.verbose = verbose
         if not tb:
-            import matplotlib.pyplot as plt
-            self.tb = plt.get_current_fig_manager().toolbar
+         #   import matplotlib.pyplot as plt
+         #   self.tb = plt.get_current_fig_manager().toolbar
+            print 'No tb set, will not work'
         else:
             self.tb = tb
 
@@ -127,7 +128,7 @@ class LineBuilder:
                 self.lats.append(la)
             self.line.axes.format_coord = self.format_position_distance
         self.line.set_data(self.xs, self.ys)
-        self.line.range_circles = self.plt_range_circles()
+        self.line.range_circles,self.line.range_cir_anno = self.plt_range_circles()
         self.line.figure.canvas.draw()
         self.press = event.xdata,event.ydata
         if self.verbose:
@@ -136,13 +137,38 @@ class LineBuilder:
         
     def onrelease(self,event):
         'Function to set the point location'
-        if event.inaxes!=self.line.axes: return
+        
         if self.verbose:
             print 'release'#,event
+
+        if (self.tb.mode == 'zoom rect') | (self.tb.mode == 'pan/zoom') | (self.tb.mode!=''):
+            ylim = self.line.axes.get_ylim()
+            xlim = self.line.axes.get_xlim()
+            self.m.llcrnrlon = xlim[0]
+            self.m.llcrnrlat = ylim[0]
+            self.m.urcrnrlon = xlim[1]
+            self.m.urcrnrlat = ylim[1]
+            print self.line.axes.
+            import map_interactive as mi
+            if (xlim[1]-xlim[0])<20.0:
+                mer = np.linspace(-14,20,18).astype(int)
+            else:
+                mer = np.linspace(-15,20,8).astype(int)
+            if (ylim[1]-ylim[0])<20.0:
+                par = np.linspace(-24,4,15).astype(int)
+            else:
+                par = np.linspace(-25,5,7).astype(int)
+            mi.update_pars_mers(self.m,mer,par)
+### Need to update
+            self.line.figure.canvas.draw()
+            return
+        elif self.tb.mode!='':
+            return
+        
+        if event.inaxes!=self.line.axes: return
         self.press = None
         self.line.axes.format_coord = self.format_position_simple
         
-        if self.tb.mode!='': return
         if self.contains:
             hlight = self.highlight_linepoint.findobj()[0]
             while hlight in self.line.axes.lines:
@@ -161,6 +187,11 @@ class LineBuilder:
                 self.ex.write_to_excel()
         for lrc in self.line.range_circles:
             self.m.ax.lines.remove(lrc)
+        for arc in self.line.range_cir_anno:
+            try:
+                arc.remove()
+            except:
+                continue
         self.update_labels()
         self.line.figure.canvas.draw()
             
@@ -207,6 +238,7 @@ class LineBuilder:
 
     def onfigureenter(self,event):
         'event handler for updating the figure with excel data'
+        self.line.axes.format_coord = 'Calculating ...'
         if self.verbose:
             print 'entered figure'#, event
         if self.ex:
@@ -221,6 +253,8 @@ class LineBuilder:
                 self.line.set_data(self.xs,self.ys)
                 self.line.figure.canvas.draw()
         self.update_labels()
+        self.line.axes.format_coord = 'Done Calculating!'
+        self.line.axes.format_coord = self.format_position_simple
                 
     def format_position_simple(self,x,y):
         'format the position indicator with only position'
@@ -244,11 +278,12 @@ class LineBuilder:
         
     def update_labels(self):
         'method to update the waypoints labels after each recalculations'
-        import matplotlib as mpl
-        if mpl.rcParams['text.usetex']:
-            s = '\#'
-        else:
-            s = '#'
+        #import matplotlib as mpl
+        #if mpl.rcParams['text.usetex']:
+        #    s = '\#'
+        #else:
+        #    s = '#'
+        s = '#'
         if self.ex:
             self.wp = self.ex.WP
         else:
@@ -275,12 +310,18 @@ class LineBuilder:
         'program to plot range circles starting from the last point selected on the map'        
         if self.circlesoff:
             return
-        diam = [50.0,100.0,200.0,300.0,400.0]
+        diam = [50.0,100.0,200.0,500.0,1000.0]
+        colors = ['lightgrey','lightgrey','lightgrey','lightsalmon','crimson']
         line = []
-        for d in diam:
-            ll, = mu.equi(self.m,self.lons[-2],self.lats[-2],d)
+        an = []
+        for i,d in enumerate(diam):
+            ll, = mu.equi(self.m,self.lons[-2],self.lats[-2],d,color=colors[i])
             line.append(ll)
-        return line
+            lon,lat,az = mu.shoot(self.lons[-2],self.lats[-2],0.0,d)
+            x,y = self.m(lon,lat)
+            ano = self.line.axes.annotate('%i km' %(d/2.0),(x,y),color='silver')
+            an.append(ano)
+        return line,an
 
     def makegrey(self):
         'Program to grey out the entire path'
@@ -306,6 +347,7 @@ def build_basemap(lower_left=[-20,-30],upper_right=[20,10],ax=None,proj='cyl'):
     m = Basemap(projection=proj,lon_0=(upper_right[0]+lower_left[0]),lat_0=(upper_right[1]+lower_left[1]),
             llcrnrlon=lower_left[0], llcrnrlat=lower_left[1],
             urcrnrlon=upper_right[0], urcrnrlat=upper_right[1],resolution='h',ax=ax)
+    m.artists = []
     m.drawcoastlines()
     #m.fillcontinents(color='#AAAAAA')
     m.drawstates()
@@ -314,9 +356,34 @@ def build_basemap(lower_left=[-20,-30],upper_right=[20,10],ax=None,proj='cyl'):
     #mer = np.linspace(lower_left[0],upper_right[0],8).astype(int)
     par = np.linspace(-25,5,7).astype(int)
     #par = np.linspace(lower_left[1],upper_right[1],8).astype(int)
-    m.drawmeridians(mer,labels=[0,0,0,1])
-    m.drawparallels(par,labels=[1,0,0,0])
+    m.artists.append(m.drawmeridians(mer,labels=[0,0,0,1]))
+    m.artists.append(m.drawparallels(par,labels=[1,0,0,0]))
     return m
+
+def update_pars_mers(m,meridians,parallels):
+    'Simple program to remove old meridians and parallels and plot new ones'
+    r = 0
+    for a in m.artists:
+        try:
+            a.remove()
+        except AttributeError:
+            for b in a.values():
+                try:
+                    b.remove()
+                except:
+                    for c in b:
+                        try:
+                            c.remove()
+                        except:
+                            for d in c:
+                                try:
+                                    d.remove()
+                                except:
+                                    r = r+1
+
+    m.artists = []
+    m.artists.append(m.drawmeridians(meridians,labels=[0,0,0,1]))
+    m.artists.append(m.drawparallels(parallels,labels=[1,0,0,0]))
 
 def pll(string):
     """
