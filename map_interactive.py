@@ -210,7 +210,7 @@ class LineBuilder:
         if self.verbose:
             print 'entered figure'#, event
         if self.ex:
-            self.ex.switchsheet(self.iactive)
+            #self.ex.switchsheet(self.iactive)
             self.ex.check_xl()
             self.lats = list(self.ex.lat)
             self.lons = list(self.ex.lon)
