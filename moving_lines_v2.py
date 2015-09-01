@@ -132,6 +132,16 @@ def Create_interaction(**kwargs):
     m = mi.build_basemap(ax=ui.ax1)
     line = init_plot(m)
 
+    #add points of interest
+    flabels = 'labels.txt'
+    faero = 'aeronet_locations.txt'
+    try:
+        mi.plot_map_labels(m,flabels)
+        mi.plot_map_labels(m,faero,marker='*',skip_lines=2)
+    except Exception as ie:
+        print 'Label files not found!'
+        print ie
+        
     get_datestr(ui)
     wb = ex.dict_position(datestr=ui.datestr,**kwargs)
     lines = mi.LineBuilder(line,m=m,ex=wb,tb=ui.tb)

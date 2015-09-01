@@ -118,6 +118,7 @@ class LineBuilder:
                     self.lons.append(lo)
                     self.lats.append(la)
                 self.contains = False
+            ilola = self.contains_index
         else:
             self.xy = self.xs[-1],self.ys[-1]
             self.xs.append(event.xdata)
@@ -127,8 +128,9 @@ class LineBuilder:
                 self.lons.append(lo)
                 self.lats.append(la)
             self.line.axes.format_coord = self.format_position_distance
+            ilola = -2
         self.line.set_data(self.xs, self.ys)
-        self.line.range_circles,self.line.range_cir_anno = self.plt_range_circles()
+        self.line.range_circles,self.line.range_cir_anno = self.plt_range_circles(self.lons[ilola],self.lats[ilola])
         self.line.figure.canvas.draw()
         self.press = event.xdata,event.ydata
         if self.verbose:
@@ -148,7 +150,6 @@ class LineBuilder:
             self.m.llcrnrlat = ylim[0]
             self.m.urcrnrlon = xlim[1]
             self.m.urcrnrlat = ylim[1]
-            print self.line.axes.
             import map_interactive as mi
             if (xlim[1]-xlim[0])<20.0:
                 mer = np.linspace(-14,20,18).astype(int)
@@ -306,7 +307,7 @@ class LineBuilder:
                                 annotate(s+'%i'%i,(self.xs[i-1],self.ys[i-1])))
         self.line.figure.canvas.draw()
 
-    def plt_range_circles(self):
+    def plt_range_circles(self,lon,lat):
         'program to plot range circles starting from the last point selected on the map'        
         if self.circlesoff:
             return
@@ -315,10 +316,10 @@ class LineBuilder:
         line = []
         an = []
         for i,d in enumerate(diam):
-            ll, = mu.equi(self.m,self.lons[-2],self.lats[-2],d,color=colors[i])
+            ll, = mu.equi(self.m,lon,lat,d,color=colors[i])
             line.append(ll)
-            lon,lat,az = mu.shoot(self.lons[-2],self.lats[-2],0.0,d)
-            x,y = self.m(lon,lat)
+            slon,slat,az = mu.shoot(lon,lat,0.0,d)
+            x,y = self.m(slon,slat)
             ano = self.line.axes.annotate('%i km' %(d/2.0),(x,y),color='silver')
             an.append(ano)
         return line,an
@@ -412,5 +413,45 @@ def pll(string):
     deg = float(str_ls[0])*sign
     deg_m = 0.0
     for i in range(n-1,0,-1):
-        deg_m = (deg_m + float(str_ls[i])/60.0)/60.0
-    return deg+deg_m
+        deg_m = deg_m/60.0
+        deg_m = deg_m + float(str_ls[i])/60.0
+    return deg+(deg_m*sign)
+
+def plot_map_labels(m,filename,marker=None,skip_lines=0):
+    """
+    program to plot the map labels on the basemap plot defined by m
+    if marker is set, then it will be the default for all points in file
+    """
+    from map_interactive import load_map_labels
+    labels = load_map_labels(filename,skip_lines=skip_lines) 
+    for l in labels:
+        try:
+            x,y = m(l['lon'],l['lat'])
+            xtxt,ytxt = m(l['lon']+0.01,l['lat'])
+        except:
+            x,y = l['lon'],l['lat']
+            xtxt,ytxt = l['lon']+0.01,l['lat']
+        if marker:
+            ma = marker
+        else:
+            ma = l['marker'] 
+        m.plot(x,y,color='k',marker=ma)
+        m.ax.annotate(l['label'],(xtxt,ytxt))
+
+def load_map_labels(filename,skip_lines=0):
+    """
+    Program to load map labels from a text file, csv
+    with format: Label, lon, lat, style
+    returns list of dictionary with each key as the label
+    """
+    from map_interactive import pll
+    out = []
+    with open(filename,'r') as f:
+        for i in range(skip_lines):
+            next(f)
+        for line in f:
+            sp = line.split(',')
+            if sp[0].startswith('#'):
+                break
+            out.append({'label':sp[0],'lon':pll(sp[1]),'lat':pll(sp[2]),'marker':sp[3].rstrip('\n')})
+    return out
