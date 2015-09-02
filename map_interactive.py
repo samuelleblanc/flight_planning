@@ -417,7 +417,7 @@ def pll(string):
         deg_m = deg_m + float(str_ls[i])/60.0
     return deg+(deg_m*sign)
 
-def plot_map_labels(m,filename,marker=None,skip_lines=0):
+def plot_map_labels(m,filename,marker=None,skip_lines=0,color='k'):
     """
     program to plot the map labels on the basemap plot defined by m
     if marker is set, then it will be the default for all points in file
@@ -427,15 +427,15 @@ def plot_map_labels(m,filename,marker=None,skip_lines=0):
     for l in labels:
         try:
             x,y = m(l['lon'],l['lat'])
-            xtxt,ytxt = m(l['lon']+0.01,l['lat'])
+            xtxt,ytxt = m(l['lon']+0.05,l['lat'])
         except:
             x,y = l['lon'],l['lat']
-            xtxt,ytxt = l['lon']+0.01,l['lat']
+            xtxt,ytxt = l['lon']+0.05,l['lat']
         if marker:
             ma = marker
         else:
             ma = l['marker'] 
-        m.plot(x,y,color='k',marker=ma)
+        m.plot(x,y,color=color,marker=ma)
         m.ax.annotate(l['label'],(xtxt,ytxt))
 
 def load_map_labels(filename,skip_lines=0):
@@ -455,3 +455,66 @@ def load_map_labels(filename,skip_lines=0):
                 break
             out.append({'label':sp[0],'lon':pll(sp[1]),'lat':pll(sp[2]),'marker':sp[3].rstrip('\n')})
     return out
+
+def load_sat_from_net():
+    """
+    Program to load the satllite track prediction from the internet
+    Checks at the avdc website
+    """
+    import time
+    from urllib2 import urlopen
+    from pykml import parser
+    today = time.strftime('%Y%m%d')
+    site = 'http://avdc.gsfc.nasa.gov/download_2.php?site=98675770&id=25&go=download&path=%2FSubsatellite%2Fkml&file=A-Train_subsatellite_prediction_'+today+'T000000Z.kml'
+    response = urlopen(site)
+    print 'Getting the kml prediction file from avdc.gsfc.nasa.gov'
+    r = response.read()
+    kml = parser.fromstring(r)
+    print 'Kml file read...'
+    return kml
+
+def load_sat_from_file(filename):
+    """
+    Program to load the satellite track prediction from a saved file
+    """
+    from pykml import parser
+    f = open(filename,'r')
+    r = f.read()
+    kml = parser.fromstring(r)
+    return kml
+
+def get_sat_tracks(datestr,kml):
+    """
+    Program that goes and fetches the satellite tracks for the day
+    For the day defined with datestr
+    kml is the parsed kml structure with pykml
+    """
+    from map_interactive import pll
+    sat = dict()
+    # properly format datestr
+    day = datestr.replace('-','')
+    for i in range(4):
+        name = str(kml.Document.Document[i].name).split(':')[1].lstrip(' ')
+        for j in range(1,kml.Document.Document[i].countchildren()-1):
+            if str(kml.Document.Document[i].Placemark[j].name).find(day) > 0:
+                pos_str = str(kml.Document.Document[i].Placemark[j].Linestring.coordinates)
+                post_fl = pos_str.split(' ')
+                lon,lat = [],[]
+                for s in post_fl:
+                    x,y = s.split(',')
+                    lon.append(pll(x))
+                    lat.append(pll(y))
+        sat[name] = (lon,lat)
+    return sat
+
+def plot_sat_tracks(m,sat):
+    """
+    Program that goes through and plots the satellite tracks
+    """
+    for k in sat.keys():
+        (lon,lat) = sat[k]
+        x,y = m(lon,lat)
+        m.plot(x,y,'x-')
+
+        
+    

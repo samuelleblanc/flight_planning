@@ -98,6 +98,11 @@ def build_buttons(ui,lines,vertical=True):
     g.newflightpath.pack(in_=ui.top,padx=5,pady=5)
     tk.Frame(g.root,height=h,width=w,bg='black',relief='sunken'
              ).pack(in_=ui.top,side=side,padx=8,pady=5)
+    g.addsat = tk.Button(g.root,text='Add Satellite tracks',
+                         command = g.gui_addsat)
+    g.addsat.pack(in_=ui.top)
+    tk.Frame(g.root,height=h,width=w,bg='black',relief='sunken'
+             ).pack(in_=ui.top,side=side,padx=8,pady=5)
     tk.Button(g.root,text='Quit',command=g.stopandquit,bg='lightcoral'
               ).pack(in_=ui.top,side=side)
 
@@ -132,15 +137,13 @@ def Create_interaction(**kwargs):
     m = mi.build_basemap(ax=ui.ax1)
     line = init_plot(m)
 
-    #add points of interest
     flabels = 'labels.txt'
     faero = 'aeronet_locations.txt'
     try:
         mi.plot_map_labels(m,flabels)
-        mi.plot_map_labels(m,faero,marker='*',skip_lines=2)
-    except Exception as ie:
+        mi.plot_map_labels(m,faero,marker='*',skip_lines=2,color='y')
+    except:
         print 'Label files not found!'
-        print ie
         
     get_datestr(ui)
     wb = ex.dict_position(datestr=ui.datestr,**kwargs)

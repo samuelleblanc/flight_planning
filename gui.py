@@ -266,3 +266,13 @@ class gui:
         #bmaketext.pack()
         self.root.mainloop()
 
+    def gui_addsat(self):
+        'Gui button to add the satellite tracks'
+        from tkMessageBox import askquestion
+        answer = askquestion('Verify import satellite tracks','Do you want to get the satellite tracks from the internet?')
+        if answer == 'yes':
+            from map_interactive import load_sat_from_net, get_sat_tracks, plot_sat_tracks
+            kml = load_sat_from_net()
+            sat = get_sat_tracks(self.line.ex.datestr,kml)
+            plot_sat_tracks(self.line.m,sat)
+
