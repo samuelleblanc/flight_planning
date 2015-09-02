@@ -14,7 +14,8 @@ class dict_position:
         alt0: [m] initial altitude of the plane, airport altitude (optional)
         verbose: if True then outputs many command line comments while interaction is executed, defaults to False
         filename: (optional) if set, opens the excel file and starts the interaction with the first sheet
-        datestr: (optional) The flight day in format YYYY-MM-DD, if not set, defautl to today in utc.
+        datestr: (optional) The flight day in format YYYY-MM-DD, if not set, default to today in utc.
+        color: (optional) the color of the flight path defaults to red.
     Outputs:
         dict_position class 
     Dependencies:
@@ -47,12 +48,14 @@ class dict_position:
         Modified: Samuel LeBlanc, 2015-08-24, Santa Cruz, CA
                 - added multi flight path handling funcitonality, by generating new sheets
                 - added newsheetonly keyword and name keyword
+        Modified: Samuel LeBlanc, 2015-09-02, Santa Cruz, CA
+                - added color keyword
                 
     """
     def __init__(self,lon0='14 38.717E',lat0='22 58.783S',speed=150.0,UTC_start=7.0,
                  UTC_conversion=+1.0,alt0=0.0,
                  verbose=False,filename=None,datestr=None,
-                 newsheetonly=False,name='P3 Flight path',sheet_num=1):
+                 newsheetonly=False,name='P3 Flight path',sheet_num=1,color='red'):
         import numpy as np
         from xlwings import Range
         import map_interactive as mi
@@ -80,6 +83,7 @@ class dict_position:
         self.speed_kts = self.speed*1.94384449246
         self.alt_kft = self.alt*3.28084/1000.0
         self.head = self.legt
+        self.color = color
         self.googleearthopened = False
         self.netkml = None
         self.verbose = verbose
@@ -525,8 +529,8 @@ class dict_position:
                              'Altitude\n[kft]','SZA\n[deg]','AZI\n[deg]','Comments']
         top_line = Range('A1').horizontal
         address = top_line.get_address(False,False)
-        import sys
-        if sys.platform.startswith('win'):
+        from sys import platform
+        if platform.startswith('win'):
             from win32com.client import Dispatch
             xl = Dispatch("Excel.Application")
          #   xl.ActiveWorkbook.Windows(1).SplitColumn = 0.4
@@ -611,17 +615,17 @@ class dict_position:
         if not filename:
             print 'no filename defined, returning'
             return
-        import sys
-        import os
-        if sys.platform.startswith('win'):
+        from sys import platform
+        from os import startfile
+        if platform.startswith('win'):
             try:
-                import win32com.client
-                ge = win32com.client.Dispatch("GoogleEarth.ApplicationGE")
+                from win32com.client import Dispatch
+                ge = Dispatch("GoogleEarth.ApplicationGE")
                 ge.OpenKmlFile(filename,True)
             except:
-                os.startfile(filename)
+                startfile(filename)
         else:
-            os.startfile(filename)
+            startfile(filename)
 
     def save2gpx(self,filename=None):
         'Program to save the waypoints and track in gpx format'

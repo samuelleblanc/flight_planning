@@ -10,11 +10,16 @@ class gui:
     Dependencies:
         Tkinter
         excel_interface
+        os.path
         matplotlib
+        tkFileDialog
     Example:
         ...
     History:
         Written: Samuel LeBlanc, 2015-08-18, NASA Ames, CA
+        Modified: Samuel LeBlanc, 2015-09-02, Santa Cruz, CA
+	          - added handlers for a few new buttons
+		  - modified imports to be more specific
     """
     def __init__(self,line=None,root=None,noplt=False):
         import Tkinter as tk
@@ -24,8 +29,8 @@ class gui:
         self.line = line
         self.flight_num = 0
         self.iactive = 0
-        self.colors = ['r']
-        self.colorcycle = ['r','b','g','c','m','y']
+        self.colors = ['red']
+        self.colorcycle = ['red','blue','green','cyan','magenta','yellow']
         if not root:
             self.root = tk.Tk()
         else:
@@ -40,10 +45,11 @@ class gui:
         """
         from Tkinter import Tk
         from tkFileDialog import askopenfilename
-        import os
+        from os.path import abspath
         Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
         filename = askopenfilename(defaultextension=ext,filetypes=ftype) # show an "Open" dialog box and return the path to the selected file
-        filename = os.path.abspath(filename)
+        if filename:
+	    filename = abspath(filename)
         return filename
 
     def gui_file_save(self,ext='*',
@@ -55,10 +61,10 @@ class gui:
         """
         from Tkinter import Tk
         from tkFileDialog import asksaveasfilename
-        import os
+        from os.path import abspath
         Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
         filename = asksaveasfilename(defaultextension=ext,filetypes=ftype) # show an "Open" dialog box and return the path to the selected file
-        filename = os.path.abspath(filename)
+        filename = abspath(filename)
         return filename
 
     def make_text(self):
@@ -144,10 +150,6 @@ class gui:
             canvas._tkcanvas.pack(side=tk.TOP,fill=tk.BOTH,expand=1)
             ax1 = fig.add_subplot(111)
         else:
-            #import matplotlib.pyplot as plt
-            #f1 = plt.gcf()
-            #fig = plt.figure()
-            #ax1 = fig.add_subplot(1)
             print 'Problem with loading a new figure handler'
             return
         ax1.plot(self.line.ex.cumlegt,self.line.ex.alt,'x-')
@@ -158,7 +160,13 @@ class gui:
         ax2.xaxis.tick_top()
         ax2.set_xlabel('UTC [Hours]')
         ax2.set_xticks(self.line.ex.cumlegt)
-        ax2.set_xticklabels(self.line.ex.utc)
+	utc_labels = ['%2.2f'%u for u in self.line.ex.utc]
+        ax2.set_xticklabels(utc_labels)
+	ax2.yaxis.tick_right()
+	ax2.set_ylabel('Altitude [Kft]')
+	ax2.set_yticks(self.line.ex.alt)
+	alt_labels = ['%2.2f'%a for a in self.line.ex.alt_kft]
+	ax2.set_yticklabels(alt_labels)
         if self.noplt:
             canvas.draw()
         else:
@@ -189,7 +197,8 @@ class gui:
         self.line.ex_arr.append(ex.dict_position(datestr=self.line.ex.datestr,
                                                  name=newname,
                                                  newsheetonly=True,
-                                                 sheet_num=self.flight_num))
+                                                 sheet_num=self.flight_num,
+                                                 color=self.colorcycle[self.flight_num]))
         self.line.newline()
         self.iactive = self.flight_num
         self.gui_changeflight()
@@ -212,8 +221,7 @@ class gui:
             return
         filename = self.gui_file_save(ext='.png')
         if not filename: return
-        import matplotlib as plt
-        plt.savefig(filename,dpi=600,transparent=True)
+        print 'Use toolbar'
 
     def stopandquit(self):
         'function to force a stop and quit the mainloop, future with exit of python'
@@ -275,4 +283,14 @@ class gui:
             kml = load_sat_from_net()
             sat = get_sat_tracks(self.line.ex.datestr,kml)
             plot_sat_tracks(self.line.m,sat)
-
+        elif answer ==  'no':
+            from map_interactive import load_sat_from_file, get_sat_tracks, plot_sat_tracks
+            filename = self.gui_file_select(ext='.kml',ftype=[('All files','*.*'),
+                                                         ('Google Earth','*.kml')])
+            if not filename:
+                print 'Cancelled, no file selected'
+                return
+            print 'Opening kml File:'+filename
+            kml = load_sat_from_file(filename)
+            sat = get_sat_tracks(self.line.ex.datestr,kml)
+            plot_sat_tracks(self.line.m,sat)

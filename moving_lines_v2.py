@@ -1,8 +1,3 @@
-#import matplotlib
-#import os,sys
-#fp = os.path.dirname(os.path.abspath(__file__))
-#matplotlib.rc_file(fp+os.path.sep+'file.rc')
-#matplotlib.use('TkAgg')
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
 import Tkinter as tk
@@ -15,7 +10,7 @@ import excel_interface as ex
 import map_interactive as mi
 import gui
 
-version = 'v0.3'
+version = 'v0.4beta'
 
 def Create_gui(vertical=True):
     'Program to set up gui interaction with figure embedded'
@@ -48,6 +43,7 @@ def build_buttons(ui,lines,vertical=True):
     'Program to set up the buttons'
     import gui
     import Tkinter as tk
+    from matplotlib.colors import cnames
     if vertical:
         side = tk.TOP
         h = 2
@@ -87,6 +83,7 @@ def build_buttons(ui,lines,vertical=True):
     g.frame_select.pack(in_=ui.top,side=side,fill=tk.BOTH)
     g.flightselect_arr = []
     g.flightselect_arr.append(tk.Radiobutton(g.root,text=lines.ex.name,
+                                             fg=lines.ex.color,
                                              variable=g.iactive,value=0,
                                              indicatoron=0,
                                              command=g.gui_changeflight,
@@ -105,6 +102,7 @@ def build_buttons(ui,lines,vertical=True):
              ).pack(in_=ui.top,side=side,padx=8,pady=5)
     tk.Button(g.root,text='Quit',command=g.stopandquit,bg='lightcoral'
               ).pack(in_=ui.top,side=side)
+    ui.g = g
 
 def get_datestr(ui):
     import tkSimpleDialog
@@ -123,19 +121,19 @@ def savetmp(ui,wb):
         print 'unable to save excel to temp file:'+tmpfilename
         print 'continuing ...'
 
-def init_plot(m):
+def init_plot(m,color='red'):
     lat0,lon0 = mi.pll('22 58.783S'), mi.pll('14 38.717E')
     x0,y0 = m(lon0,lat0)
-    line, = m.plot([x0],[y0],'ro-')
+    line, = m.plot([x0],[y0],'o-',color=color)
     text = ('Press s to stop interaction\\n'
             'Press i to restart interaction\\n')
     return line
 
-def Create_interaction(**kwargs):
+def Create_interaction(test=False,**kwargs):
     ui = Create_gui()
 
     m = mi.build_basemap(ax=ui.ax1)
-    line = init_plot(m)
+    line = init_plot(m,color='red')
 
     flabels = 'labels.txt'
     faero = 'aeronet_locations.txt'
@@ -146,13 +144,14 @@ def Create_interaction(**kwargs):
         print 'Label files not found!'
         
     get_datestr(ui)
-    wb = ex.dict_position(datestr=ui.datestr,**kwargs)
+    wb = ex.dict_position(datestr=ui.datestr,color=line.get_color(),**kwargs)
     lines = mi.LineBuilder(line,m=m,ex=wb,tb=ui.tb)
     savetmp(ui,wb)
     
     build_buttons(ui,lines)    
-    ui.root.mainloop()
-    return lines
+    if not test:
+        ui.root.mainloop()
+    return lines,ui
 
 if __name__ == "__main__":
-    lines = Create_interaction()
+    lines,ui = Create_interaction(test=True)

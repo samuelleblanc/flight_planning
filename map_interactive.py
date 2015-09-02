@@ -1,7 +1,11 @@
 from mpl_toolkits.basemap import Basemap
 import numpy as np
 import sys
-import map_utils as mu
+import re
+import copy
+
+import map_interactive as mi
+from map_utils import spherical_dist,equi,shoot
 
 class LineBuilder:
     """
@@ -37,7 +41,7 @@ class LineBuilder:
             for interfacing with Excel spreadsheet
         
         """
-        self.line = line
+	self.line = line
         self.line_arr = []
         self.line_arr.append(line)
         self.iactive = 0
@@ -150,7 +154,6 @@ class LineBuilder:
             self.m.llcrnrlat = ylim[0]
             self.m.urcrnrlon = xlim[1]
             self.m.urcrnrlat = ylim[1]
-            import map_interactive as mi
             if (xlim[1]-xlim[0])<20.0:
                 mer = np.linspace(-14,20,18).astype(int)
             else:
@@ -270,7 +273,7 @@ class LineBuilder:
             x0,y0 = self.xy
             lon0,lat0 = self.m(x0,y0,inverse=True)
             lon,lat = self.m(x,y,inverse=True)
-            r = mu.spherical_dist([lat0,lon0],[lat,lon])
+            r = spherical_dist([lat0,lon0],[lat,lon])
             return 'Lon=%.7f, Lat=%.7f, d=%.2f km'%(lon,lat,r)
         else:
             x0,y0 = self.xy
@@ -316,9 +319,9 @@ class LineBuilder:
         line = []
         an = []
         for i,d in enumerate(diam):
-            ll, = mu.equi(self.m,lon,lat,d,color=colors[i])
+            ll, = equi(self.m,lon,lat,d,color=colors[i])
             line.append(ll)
-            slon,slat,az = mu.shoot(lon,lat,0.0,d)
+            slon,slat,az = shoot(lon,lat,0.0,d)
             x,y = self.m(slon,slat)
             ano = self.line.axes.annotate('%i km' %(d/2.0),(x,y),color='silver')
             an.append(ano)
@@ -335,7 +338,6 @@ class LineBuilder:
 
     def newline(self):
         'Program to do a deep copy of the line object in the LineBuilder class'
-        import copy
         self.line_arr.append(copy.copy(self.line))
 
 def build_basemap(lower_left=[-20,-30],upper_right=[20,10],ax=None,proj='cyl'):
@@ -395,7 +397,6 @@ def pll(string):
     """
     if type(string) is float:
         return string
-    import re
     n = len(string.split())
     str_ls = string.split()
     char_neg = re.findall("[SWsw]+",str_ls[-1])
@@ -422,8 +423,7 @@ def plot_map_labels(m,filename,marker=None,skip_lines=0,color='k'):
     program to plot the map labels on the basemap plot defined by m
     if marker is set, then it will be the default for all points in file
     """
-    from map_interactive import load_map_labels
-    labels = load_map_labels(filename,skip_lines=skip_lines) 
+    labels = mi.load_map_labels(filename,skip_lines=skip_lines) 
     for l in labels:
         try:
             x,y = m(l['lon'],l['lat'])
@@ -444,7 +444,6 @@ def load_map_labels(filename,skip_lines=0):
     with format: Label, lon, lat, style
     returns list of dictionary with each key as the label
     """
-    from map_interactive import pll
     out = []
     with open(filename,'r') as f:
         for i in range(skip_lines):
@@ -452,8 +451,8 @@ def load_map_labels(filename,skip_lines=0):
         for line in f:
             sp = line.split(',')
             if sp[0].startswith('#'):
-                break
-            out.append({'label':sp[0],'lon':pll(sp[1]),'lat':pll(sp[2]),'marker':sp[3].rstrip('\n')})
+                continue
+            out.append({'label':sp[0],'lon':mi.pll(sp[1]),'lat':mi.pll(sp[2]),'marker':sp[3].rstrip('\n')})
     return out
 
 def load_sat_from_net():
@@ -497,14 +496,20 @@ def get_sat_tracks(datestr,kml):
         name = str(kml.Document.Document[i].name).split(':')[1].lstrip(' ')
         for j in range(1,kml.Document.Document[i].countchildren()-1):
             if str(kml.Document.Document[i].Placemark[j].name).find(day) > 0:
-                pos_str = str(kml.Document.Document[i].Placemark[j].Linestring.coordinates)
+                pos_str = str(kml.Document.Document[i].Placemark[j].LineString.coordinates)
                 post_fl = pos_str.split(' ')
                 lon,lat = [],[]
                 for s in post_fl:
-                    x,y = s.split(',')
-                    lon.append(pll(x))
-                    lat.append(pll(y))
-        sat[name] = (lon,lat)
+                    try:
+                        x,y = s.split(',')
+                        lon.append(pll(x))
+                        lat.append(pll(y))
+                    except:
+                        pass
+        try:
+            sat[name] = (lon,lat)
+        except UnboundLocalError:
+            print 'Skipping %s; no points downloaded' %name
     return sat
 
 def plot_sat_tracks(m,sat):
@@ -514,7 +519,8 @@ def plot_sat_tracks(m,sat):
     for k in sat.keys():
         (lon,lat) = sat[k]
         x,y = m(lon,lat)
-        m.plot(x,y,'x-')
+        m.plot(x,y,'.',label=k)
+    m.ax.legend(loc='lower right',bbox_to_anchor=(1.0,1.04))
 
         
     
