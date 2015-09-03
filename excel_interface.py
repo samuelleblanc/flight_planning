@@ -1,3 +1,12 @@
+import numpy as np
+from xlwings import Range
+import Pysolar.solar as sol
+from datetime import datetime
+
+import map_interactive as mi
+from map_interactive import pll
+import map_utils as mu
+
 class dict_position:
     """
     Purpose:
@@ -52,15 +61,19 @@ class dict_position:
                 - added color keyword
                 
     """
+    import numpy as np
+    from xlwings import Range
+    import Pysolar.solar as sol
+    from datetime import datetime
+
+    import map_interactive as mi
+    from map_interactive import pll
+    import map_utils as mu
+
     def __init__(self,lon0='14 38.717E',lat0='22 58.783S',speed=150.0,UTC_start=7.0,
                  UTC_conversion=+1.0,alt0=0.0,
                  verbose=False,filename=None,datestr=None,
                  newsheetonly=False,name='P3 Flight path',sheet_num=1,color='red'):
-        import numpy as np
-        from xlwings import Range
-        import map_interactive as mi
-        from map_interactive import pll
-        import map_utils as mu
         self.comments = [' ']
         self.lon = np.array([pll(lon0)])
         self.lat = np.array([pll(lat0)])
@@ -80,7 +93,8 @@ class dict_position:
         self.turn_time = self.lon*0.0
         self.sza = self.lon*0.0
         self.azi = self.lon*0.0
-        self.speed_kts = self.speed*1.94384449246
+        self.datetime = self.lon*0.0
+	self.speed_kts = self.speed*1.94384449246
         self.alt_kft = self.alt*3.28084/1000.0
         self.head = self.legt
         self.color = color
@@ -90,8 +104,7 @@ class dict_position:
         if datestr:
             self.datestr = datestr
         else:
-            import datetime
-            self.datestr = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+            self.datestr = datetime.utcnow().strftime('%Y-%m-%d')
         self.calculate()
         if not filename:
             self.sheet_num = sheet_num
@@ -116,8 +129,6 @@ class dict_position:
 
         Assumes that blank spaces/nan are to be filled with new calculations
         """
-        import numpy as np
-        import map_utils as mu
         default_bank_angle = 15.0
         self.rate_of_turn = 1091.0*np.tan(default_bank_angle*np.pi/180)/self.speed[0] # degree per second
         self.n = len(self.lon)
@@ -162,10 +173,28 @@ class dict_position:
         self.cumdist_nm = self.dist_nm.cumsum()
         self.cumlegt = np.nan_to_num(self.legt).cumsum()
 
-        self.sza = self.lon*0.0-999
-        self.azi = self.lat*0.0-999
+	self.datetime = self.calcdatetime()
+	self.sza,self.azi = mu.get_sza_azi(self.lat,self.lon,self.datetime)
         
         self.time2xl()
+
+    def calcdatetime(self):
+        """
+	Program to convert a utc time and datestr to datetime object
+	"""
+	from datetime import datetime
+	dt = []
+	Y,M,D = [int(s) for s in self.datestr.split('-')] 
+	for i,u in enumerate(self.utc):
+	    hh = int(u)
+	    mm = int((u-hh)*60.0)
+	    ss = int(((u-hh)*60.0-mm)*60.0)
+	    ms = int((((u-hh)*60.0-mm)*60.0-ss)*1000.0)
+	    while hh > 23:
+	    	hh = hh-24
+		D = D+1
+	    dt.append(datetime(Y,M,D,hh,mm,ss,ms))
+	return dt
 
     def time2xl(self):
         """

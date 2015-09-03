@@ -77,6 +77,9 @@ def build_buttons(ui,lines,vertical=True):
     g.bplotalt = tk.Button(g.root,text='Plot alt vs time',
                            command=g.gui_plotalttime)
     g.bplotalt.pack(in_=ui.top,side=side)
+    g.bplotsza = tk.Button(g.root,text='Plot SZA',
+                           command=g.gui_plotsza)
+    g.bplotsza.pack(in_=ui.top,side=side)
     tk.Frame(g.root,height=h,width=w,bg='black',relief='sunken'
              ).pack(in_=ui.top,side=side,padx=8,pady=5)
     g.frame_select = tk.Frame(g.root,relief=tk.SUNKEN,bg='white')
@@ -95,9 +98,12 @@ def build_buttons(ui,lines,vertical=True):
     g.newflightpath.pack(in_=ui.top,padx=5,pady=5)
     tk.Frame(g.root,height=h,width=w,bg='black',relief='sunken'
              ).pack(in_=ui.top,side=side,padx=8,pady=5)
-    g.addsat = tk.Button(g.root,text='Add Satellite tracks',
+    g.baddsat = tk.Button(g.root,text='Add Satellite tracks',
                          command = g.gui_addsat)
-    g.addsat.pack(in_=ui.top)
+    g.baddsat.pack(in_=ui.top)
+    g.baddbocachica = tk.Button(g.root,text='Add Forecast\nfrom Bocachica',
+                         command = g.gui_addbocachica)
+    g.baddbocachica.pack(in_=ui.top)
     tk.Frame(g.root,height=h,width=w,bg='black',relief='sunken'
              ).pack(in_=ui.top,side=side,padx=8,pady=5)
     tk.Button(g.root,text='Quit',command=g.stopandquit,bg='lightcoral'
@@ -106,10 +112,17 @@ def build_buttons(ui,lines,vertical=True):
 
 def get_datestr(ui):
     import tkSimpleDialog
-    import datetime
+    from datetime import datetime
+    import re
     ui.datestr = tkSimpleDialog.askstring('Flight Date','Flight Date (yyyy-mm-dd):')
     if not ui.datestr:
-        ui.datestr = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+        ui.datestr = datetime.utcnow().strftime('%Y-%m-%d')
+    else:
+        while not re.match('[0-9]{4}-[0-9]{2}-[0-9]{2}',ui.datestr):
+            ui.datestr = tkSimpleDialog.askstring('Flight Date',
+                                                  'Bad format, please retry!\nFlight Date (yyyy-mm-dd):')
+            if not ui.datestr:
+                ui.datestr = datetime.utcnow().strftime('%Y-%m-%d')
     ui.ax1.set_title(ui.datestr)
 
 def savetmp(ui,wb):
@@ -154,4 +167,4 @@ def Create_interaction(test=False,**kwargs):
     return lines,ui
 
 if __name__ == "__main__":
-    lines,ui = Create_interaction(test=True)
+    lines,ui = Create_interaction(test=False)

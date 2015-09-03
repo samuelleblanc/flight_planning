@@ -153,31 +153,80 @@ class gui:
             print 'Problem with loading a new figure handler'
             return
         ax1.plot(self.line.ex.cumlegt,self.line.ex.alt,'x-')
-        ax1.set_xlabel('Flight duration [Hours]')
-        ax1.set_ylabel('Alt [km]')
+        ax1.set_title('Altitude vs time for %s' % self.line.ex.datestr,y=1.08)
+	fig.subplots_adjust(top=0.85,right=0.8)
+	ax1.set_xlabel('Flight duration [Hours]')
+        ax1.set_ylabel('Alt [m]')
         ax1.xaxis.tick_bottom()
         ax2 = ax1.twiny()
         ax2.xaxis.tick_top()
         ax2.set_xlabel('UTC [Hours]')
-        ax2.set_xticks(self.line.ex.cumlegt)
-	utc_labels = ['%2.2f'%u for u in self.line.ex.utc]
-        ax2.set_xticklabels(utc_labels)
-	ax2.yaxis.tick_right()
-	ax2.set_ylabel('Altitude [Kft]')
-	ax2.set_yticks(self.line.ex.alt)
-	alt_labels = ['%2.2f'%a for a in self.line.ex.alt_kft]
-	ax2.set_yticklabels(alt_labels)
+        ax2.set_xticks(ax1.get_xticks())
+	cum2utc = self.line.ex.utc[0]
+	utc_label = ['%2.2f'%(u+cum2utc) for u in ax1.get_xticks()]
+	ax2.set_xticklabels(utc_label)
+	ax3 = ax1.twinx()
+	ax3.yaxis.tick_right()
+	ax3.set_ylabel('Altitude [Kft]')
+	ax3.set_yticks(ax1.get_yticks())
+	alt_labels = ['%2.2f'%(a*3.28084/1000.0) for a in ax1.get_yticks()]
+	ax3.set_yticklabels(alt_labels)
+	ax1.grid()
         if self.noplt:
             canvas.draw()
         else:
             plt.figure(f1.number)
 
+    def gui_plotsza(self):
+        'gui function to plot the solar zenith angle of the flight path'
+	#import tkMessageBox
+	#tkMessageBox.showwarning('Sorry','Feature not yet implemented') 
+	#return 
+	if not self.noplt:
+	     print 'No figure handler, sorry will not work'
+	     return
+	from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+	from matplotlib.figure import Figure
+	import Tkinter as tk
+	root = tk.Toplevel()
+	root.wm_title('Alt vs. Time')
+	fig = Figure()
+	canvas = FigureCanvasTkAgg(fig, master=root)
+	canvas.show()
+	canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+	tb = NavigationToolbar2TkAgg(canvas,root)
+	tb.pack(side=tk.BOTTOM)
+	tb.update()
+	canvas._tkcanvas.pack(side=tk.TOP,fill=tk.BOTH,expand=1)
+	ax1 = fig.add_subplot(2,1,1)
+	ax1.plot(self.line.ex.cumlegt,self.line.ex.sza,'x-')
+	ax1.set_title('Solar position along flight track for %s' % self.line.ex.datestr, y=1.18)
+	fig.subplots_adjust(top=0.85)
+	#ax1.set_xlabel('Flight duration [Hours]')
+	ax1.set_ylabel('SZA [degree]')
+	#ax1.set_xticklabels(['','','','','',''])
+	ax1.grid()
+	axticks = ax1.get_xticks()
+	ax1_up = ax1.twiny()
+	ax1_up.xaxis.tick_top()
+	cum2utc = self.line.ex.utc[0]
+	ax1_up.set_xticks(axticks)
+	utc_label = ['%2.2f'%(u+cum2utc) for u in axticks]
+	ax1_up.set_xticklabels(utc_label)
+	ax1_up.set_xlabel('UTC [Hours]')
+	ax2 = fig.add_subplot(2,1,2,sharex=ax1)
+	ax2.plot(self.line.ex.cumlegt,self.line.ex.azi,'o')
+	ax2.set_ylabel('AZI [degree]')
+	ax2.set_xlabel('Flight duration [Hours]')
+	ax2.grid()
+	canvas.draw()
+
     def gui_newflight(self):
         'Program to call and create a new excel spreadsheet'
-        import tkSimpleDialog
+        import tkSimpleDialog,tkMessageBox
         import excel_interface as ex
         import Tkinter as tk
-        print 'Not yet'
+        tkMessageBox.showwarning('Sorry','Feature not yet implemented')
         return
         
         newname = tkSimpleDialog.askstring('New flight path',
@@ -294,3 +343,16 @@ class gui:
             kml = load_sat_from_file(filename)
             sat = get_sat_tracks(self.line.ex.datestr,kml)
             plot_sat_tracks(self.line.m,sat)
+
+    def gui_addbocachica(self):
+        'GUI handler for adding bocachica foreacast maps to basemap plot'
+	import tkMessageBox
+	tkMessageBox.showwarning('Sorry','Feature not yet implemented')
+	return
+	filename = self.gui_file_select(ext='.png',ftype=[('All files','*.*'),
+                                                          ('PNG','*.png')])
+        if not filename:
+            print 'Cancelled, no file selected'
+            return
+        print 'Opening png File:'+filename
+

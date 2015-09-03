@@ -323,7 +323,7 @@ class LineBuilder:
             line.append(ll)
             slon,slat,az = shoot(lon,lat,0.0,d)
             x,y = self.m(slon,slat)
-            ano = self.line.axes.annotate('%i km' %(d/2.0),(x,y),color='silver')
+            ano = self.line.axes.annotate('%i km' %(d),(x,y),color='silver')
             an.append(ano)
         return line,an
 
