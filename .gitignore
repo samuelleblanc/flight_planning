@@ -53,3 +53,4 @@ build/
 dist/
 py2exe/
 *.swp
+moving_lines_v2.dist/
