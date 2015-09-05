@@ -340,6 +340,13 @@ class LineBuilder:
         'Program to do a deep copy of the line object in the LineBuilder class'
         self.line_arr.append(copy.copy(self.line))
 
+    def addfigure_under(self,img,ll_lat,ll_lon,ur_lat,ur_lon):
+    	'Program to add a figure under the basemap plot'
+	left,bottom = self.m(ll_lon,ll_lat)
+	right,top = self.m(ur_lon,ur_lat)
+	self.m.imshow(img,zorder=0,extent=[left,right,bottom,top])
+	self.line.figure.canvas.draw()
+
 def build_basemap(lower_left=[-20,-30],upper_right=[20,10],ax=None,proj='cyl'):
     """
     First try at a building of the basemap with a 'stere' projection

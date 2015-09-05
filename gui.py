@@ -356,3 +356,29 @@ class gui:
             return
         print 'Opening png File:'+filename
 
+
+    def gui_addfigure(self,ll_lat=None,ll_lon=None,ur_lat=None,ur_lon=None):
+        'GUI handler for adding figures forecast maps to basemap plot'
+        from scipy.misc import imread
+	import PIL
+        import tkMessageBox, tkSimpleDialog
+        #tkMessageBox.showwarning('Sorry','Feature in beta')
+        #return
+        filename = self.gui_file_select(ext='.png',ftype=[('All files','*.*'),
+                                                          ('PNG','*.png'),
+							  ('JPEG','*.jpg'),
+							  ('GIF','*.gif')])
+        if not filename:
+            print 'Cancelled, no file selected'
+            return
+        print 'Opening png File: %s' %filename
+	img = imread(filename)
+	
+	# get the corners
+	if not ll_lat:
+	    ll_lat = tkSimpleDialog.askfloat('Lower left lat','Lower left lat? [deg]')
+	    ll_lon = tkSimpleDialog.askfloat('Lower left lon','Lower left lon? [deg]')
+	    ur_lat = tkSimpleDialog.askfloat('Upper right lat','Upper right lat? [deg]')
+	    ur_lon = tkSimpleDialog.askfloat('Upper right lon','Upper right lon? [deg]')
+
+	self.line.addfigure_under(img,ll_lat,ll_lon,ur_lat,ur_lon)

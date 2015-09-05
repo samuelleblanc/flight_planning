@@ -104,6 +104,9 @@ def build_buttons(ui,lines,vertical=True):
     g.baddbocachica = tk.Button(g.root,text='Add Forecast\nfrom Bocachica',
                          command = g.gui_addbocachica)
     g.baddbocachica.pack(in_=ui.top)
+    g.baddfigure = tk.Button(g.root,text='Add Forecast\nfrom image',
+                         command = g.gui_addfigure)
+    g.baddfigure.pack(in_=ui.top)
     tk.Frame(g.root,height=h,width=w,bg='black',relief='sunken'
              ).pack(in_=ui.top,side=side,padx=8,pady=5)
     tk.Button(g.root,text='Quit',command=g.stopandquit,bg='lightcoral'
@@ -167,4 +170,4 @@ def Create_interaction(test=False,**kwargs):
     return lines,ui
 
 if __name__ == "__main__":
-    lines,ui = Create_interaction(test=False)
+    lines,ui = Create_interaction(test=True)
