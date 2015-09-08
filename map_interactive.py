@@ -340,11 +340,21 @@ class LineBuilder:
         'Program to do a deep copy of the line object in the LineBuilder class'
         self.line_arr.append(copy.copy(self.line))
 
-    def addfigure_under(self,img,ll_lat,ll_lon,ur_lat,ur_lon):
+    def addfigure_under(self,img,ll_lat,ll_lon,ur_lat,ur_lon,outside=False,**kwargs):
     	'Program to add a figure under the basemap plot'
 	left,bottom = self.m(ll_lon,ll_lat)
 	right,top = self.m(ur_lon,ur_lat)
-	self.m.imshow(img,zorder=0,extent=[left,right,bottom,top])
+	lons = np.linspace(ll_lon,ur_lon,num=img.shape[1])
+	lats = np.linspace(ll_lat,ur_lat,num=img.shape[0])
+	ix = np.where((lats>self.m.llcrnrlat)&(lats<self.m.urcrnrlat))[0]
+	iy = np.where((lons>self.m.llcrnrlon)&(lons<self.m.urcrnrlon))[0]
+	ix = img.shape[0]-ix
+	if not outside:
+	    self.m.figure_under = None
+	    #self.m.imshow(img,zorder=0,extent=[left,right,top,bottom],**kwargs)
+	    self.m.figure_under = self.m.imshow(img[ix,:,:][:,iy,:],zorder=0,alpha=0.5,**kwargs)
+	else:
+	    u = self.m.imshow(img[ix,:,:][:,iy,:],clip_on=False,**kwargs)
 	self.line.figure.canvas.draw()
 
 def build_basemap(lower_left=[-20,-30],upper_right=[20,10],ax=None,proj='cyl'):

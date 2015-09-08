@@ -347,14 +347,19 @@ class gui:
     def gui_addbocachica(self):
         'GUI handler for adding bocachica foreacast maps to basemap plot'
 	import tkMessageBox
-	tkMessageBox.showwarning('Sorry','Feature not yet implemented')
-	return
+	from scipy.misc import imread
+	#tkMessageBox.showwarning('Sorry','Feature not yet implemented')
+	#return
 	filename = self.gui_file_select(ext='.png',ftype=[('All files','*.*'),
                                                           ('PNG','*.png')])
         if not filename:
             print 'Cancelled, no file selected'
             return
         print 'Opening png File:'+filename
+	img = imread(filename)
+        ll_lat,ll_lon,ur_lat,ur_lon = -40.0,-30.0,10.0,40.0
+	self.line.addfigure_under(img[42:674,50:1015,:],ll_lat,ll_lon,ur_lat,ur_lon)
+	#self.line.addfigure_under(img[710:795,35:535,:],ll_lat-7.0,ll_lon,ll_lat-5.0,ur_lon-10.0,outside=True)
 
 
     def gui_addfigure(self,ll_lat=None,ll_lon=None,ur_lat=None,ur_lon=None):
@@ -381,4 +386,4 @@ class gui:
 	    ur_lat = tkSimpleDialog.askfloat('Upper right lat','Upper right lat? [deg]')
 	    ur_lon = tkSimpleDialog.askfloat('Upper right lon','Upper right lon? [deg]')
 
-	self.line.addfigure_under(img,ll_lat,ll_lon,ur_lat,ur_lon)
+	self.line.addfigure_under(img,ll_lat,ll_lon,ur_lat,ur_lon,alpha=0.6)

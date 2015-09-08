@@ -10,7 +10,7 @@ import excel_interface as ex
 import map_interactive as mi
 import gui
 
-version = 'v0.4beta'
+version = 'v0.5beta'
 
 def Create_gui(vertical=True):
     'Program to set up gui interaction with figure embedded'
@@ -170,4 +170,4 @@ def Create_interaction(test=False,**kwargs):
     return lines,ui
 
 if __name__ == "__main__":
-    lines,ui = Create_interaction(test=True)
+    lines,ui = Create_interaction(test=False)
