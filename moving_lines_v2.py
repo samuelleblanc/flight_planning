@@ -60,6 +60,8 @@ def build_buttons(ui,lines,vertical=True):
                             command=g.gui_open_xl)
     g.bsavexl = tk.Button(g.root,text='Save Excel file',
                           command=g.gui_save_xl)
+    g.bsavetxt = tk.Button(g.root,text='Save text file',
+                          command=g.gui_save_txt)
     g.bsaveas2kml = tk.Button(g.root,text='SaveAs to Kml',
                               command=g.gui_saveas2kml)
     g.bsave2kml = tk.Button(g.root,text='Update Kml',
@@ -69,6 +71,7 @@ def build_buttons(ui,lines,vertical=True):
     g.refresh.pack(in_=ui.top,side=side,fill=tk.X,pady=8)
     g.bopenfile.pack(in_=ui.top,side=side)
     g.bsavexl.pack(in_=ui.top,side=side)
+    g.bsavetxt.pack(in_=ui.top,side=side)
     g.bsaveas2kml.pack(in_=ui.top,side=side)
     g.bsave2kml.pack(in_=ui.top,side=side)
     g.bsave2gpx.pack(in_=ui.top,side=side)

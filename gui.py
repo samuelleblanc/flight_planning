@@ -94,6 +94,17 @@ class gui:
             return
         self.line.ex.save2kml(filename=self.kmlfilename)
 
+    def gui_save_txt(self):
+        'Calls the save2txt excel_interface method'
+        if not self.line:
+            print 'No line object'
+            return
+        filename = self.gui_file_save(ext='.txt',ftype=[('All files','*.*'),
+                                                         ('Plain text','*.txt')])
+        if not filename: return
+        print 'Saving Text file to :'+filename
+        self.line.ex.save2txt(filename)
+
     def gui_save_xl(self):
         'Calls the save2xl excel_interface method'
         if not self.line:

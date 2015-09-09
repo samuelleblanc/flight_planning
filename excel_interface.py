@@ -584,6 +584,26 @@ class dict_position:
         """
         self.wb.save(filename)
 
+    def save2txt(self,filename=None):
+        """ 
+	Simple method to save the points to a text file.
+	For input with idl and matlab
+	"""
+	f = open(filename,'w+')
+	f.write('#WP  Lat[+-90]  Lon[+-180]  Speed[m/s]  delayT[min]  Altitude[m]'+
+                '  CumLegT[H]  UTC[H]  LocalT[H]'+
+		'  LegT[H]  Dist[km]  CumDist[km]'+
+                '  Dist[nm]  CumDist[nm]  Speed[kt]'+
+                '  Altitude[kft]  SZA[deg]  AZI[deg]  Comments\n')
+	for i in xrange(self.n):
+	    f.write("""%-2i  %+2.8f  %+2.8f  %-4.2f  %-3i  %-5.1f  %-2.2f  %-2.2f  %-2.2f  %-2.2f  %-5.1f  %-5.1f  %-5.1f  %-5.1f  %-3.1f %-3.2f  %-3.1f  %-3.1f  %s  \n""" %(
+                    i+1,self.lon[i],self.lat[i],self.speed[i],
+                           self.delayt[i],self.alt[i],self.cumlegt[i],
+			   self.utc[i],self.local[i],self.legt[i],
+                           self.dist[i],self.cumdist[i],self.dist_nm[i],self.cumdist_nm[i],
+                           self.speed_kts[i],self.alt_kft[i],self.sza[i],self.azi[i],self.comments[i]))
+
+
     def save2kml(self,filename=None):
         """
         Program to save the points contained in the spreadsheet to a kml file
@@ -620,7 +640,11 @@ class dict_position:
             pnt = self.kml.newpoint()
             pnt.name = 'WP \# %i' % self.WP[i]
             pnt.coords = [(self.lon[i],self.lat[i])]
-            pnt.description = self.comments[i]
+	    pnt.description = """UTC[H]=%2.2f\nLocal[H]=%2.2f\nCumDist[km]=%f\n
+                                 speed[m/s]=%4.2f\ndelayT[min]=%f\nSZA[deg]=%3.2f\n
+                                 AZI[deg]=%3.2f\nComments:%s""" % (self.utc[i],self.local[i],self.cumdist[i],
+                                                                   self.speed[i],self.delayt[i],self.sza[i],
+                                                                   self.azi[i],self.comments[i])
 
     def print_path_kml(self):
         """
