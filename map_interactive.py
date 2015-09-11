@@ -330,7 +330,6 @@ class LineBuilder:
     def makegrey(self):
         'Program to grey out the entire path'
         self.line.set_color('#AAAAAA')
-        ### need to debug here
         
     def colorme(self,c):
         'Program to color the entire path'
@@ -338,7 +337,9 @@ class LineBuilder:
 
     def newline(self):
         'Program to do a deep copy of the line object in the LineBuilder class'
-        self.line_arr.append(copy.copy(self.line))
+        x,y = self.line.get_data()
+	line_new, = self.m.plot(x[0],y[0],'o-',linewidth=self.line.get_linewidth()) 
+	self.line_arr.append(line_new)
 
     def addfigure_under(self,img,ll_lat,ll_lon,ur_lat,ur_lon,outside=False,**kwargs):
     	'Program to add a figure under the basemap plot'

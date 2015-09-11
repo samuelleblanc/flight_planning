@@ -25,6 +25,7 @@ class dict_position:
         filename: (optional) if set, opens the excel file and starts the interaction with the first sheet
         datestr: (optional) The flight day in format YYYY-MM-DD, if not set, default to today in utc.
         color: (optional) the color of the flight path defaults to red.
+        sheet_num: (optional, defaults to 1) the sheet number to switch to
     Outputs:
         dict_position class 
     Dependencies:
@@ -59,10 +60,11 @@ class dict_position:
                 - added newsheetonly keyword and name keyword
         Modified: Samuel LeBlanc, 2015-09-02, Santa Cruz, CA
                 - added color keyword
-                
+        Modified: Samuel LeBlanc, 2015-09-10, NASA Ames, Santa Cruz, CA
+	        - added init codes for loading a single sheet of a workbook
     """
     import numpy as np
-    from xlwings import Range
+    from xlwings import Range,Sheet
     import Pysolar.solar as sol
     from datetime import datetime
 
@@ -114,10 +116,11 @@ class dict_position:
             except:
                 print 'writing to excel failed'
         else:
-            self.wb = self.Open_excel(filename=filename)
+            self.wb = self.Open_excel(filename=filename,sheet_num=sheet_num)
             self.check_xl()
             self.calculate()
             self.write_to_excel()
+	    self.sheet_num = sheet_num
 
     def calculate(self):
         """
@@ -482,13 +485,14 @@ class dict_position:
             changed = True
         return changed
 
-    def Open_excel(self,filename=None):
+    def Open_excel(self,filename=None,sheet_num=1):
         """
         Purpose:
             Program that opens and excel file and creates the proper links with pytho
         Inputs:
             filename of excel file to open
-        outputs:
+            sheet_num: what sheet to activate and load
+	outputs:
             wb: workbook instance
         Dependencies:
             xlwings
@@ -498,7 +502,7 @@ class dict_position:
         History:
             Written: Samuel LeBlanc, 2015-08-18, NASA Ames, CA
         """
-        from xlwings import Workbook, Sheet, Range, Chart
+        from xlwings import Workbook, Sheet, Range
         import numpy as np
         if not filename:
             print 'No filename found'
@@ -508,7 +512,8 @@ class dict_position:
         except Exception,ie:
             print 'Exception found:',ie
             return
-        self.name = Sheet(1).name
+        self.name = Sheet(sheet_num).name
+	Sheet(sheet_num).activate()
         self.datestr = str(Range('U1').value).split(' ')[0]
         if not self.datestr:
             print 'No datestring found! Using todays date'
@@ -609,7 +614,8 @@ class dict_position:
         Program to save the points contained in the spreadsheet to a kml file
         """
         import simplekml
-        if not filename:
+        from xlwings import Sheet
+	if not filename:
             raise NameError('filename not defined')
             return
         if not self.netkml:
@@ -621,9 +627,14 @@ class dict_position:
             filenamenet = filename+'_net.kml'
             self.netkml.save(filenamenet)
             self.kml = simplekml.Kml(open=1)
-        self.kml.document = simplekml.Folder(name = self.name)
-        self.print_points_kml()
-        self.print_path_kml()
+	for j in xrange(Sheet.count()):
+	    self.switchsheet(j)
+	    self.name = Sheet(j).name
+	    self.check_xl()
+	    self.calculate()
+            self.kml.document = simplekml.Folder(name = self.name)
+            self.print_points_kml()
+            self.print_path_kml()
         self.kml.save(filename)
         if not self.googleearthopened:
             self.openGoogleEarth(filenamenet)
@@ -640,9 +651,7 @@ class dict_position:
             pnt = self.kml.newpoint()
             pnt.name = 'WP \# %i' % self.WP[i]
             pnt.coords = [(self.lon[i],self.lat[i])]
-	    pnt.description = """UTC[H]=%2.2f\nLocal[H]=%2.2f\nCumDist[km]=%f\n
-                                 speed[m/s]=%4.2f\ndelayT[min]=%f\nSZA[deg]=%3.2f\n
-                                 AZI[deg]=%3.2f\nComments:%s""" % (self.utc[i],self.local[i],self.cumdist[i],
+	    pnt.description = """UTC[H]=%2.2f\nLocal[H]=%2.2f\nCumDist[km]=%f\nspeed[m/s]=%4.2f\ndelayT[min]=%f\nSZA[deg]=%3.2f\nAZI[deg]=%3.2f\nComments:%s""" % (self.utc[i],self.local[i],self.cumdist[i],
                                                                    self.speed[i],self.delayt[i],self.sza[i],
                                                                    self.azi[i],self.comments[i])
 
@@ -717,3 +726,28 @@ class dict_position:
         seconds = int(secon)
         microsec = int((secon-seconds)*100)
         return datetime(year,month,day,hour,minutes,seconds,microsec)
+
+def populate_ex_arr(filename=None,colorcycle=['red','blue','green']):
+    """
+    Purpose:
+        Program that opens an excel file, andruns through the sheets 
+        creates an array of dict_position
+    Input:
+        filename of excel file
+	colorcycle
+    Output:
+        excel_interface dict_position array
+    Dependeices:
+        xlwings
+    History:
+        written: Samuel LeBlanc, NASA Ames, Santa Cruz, CA 2015-09-10
+    """
+    from xlwings import Workbook,Sheet
+    import excel_interface as ex
+    arr = []
+    wb = Workbook(filename)
+    num = Sheet.count()
+    for i in range(num):
+        arr.append(ex.dict_position(filename=filename,sheet_num=i+1,color=colorcycle[i]))
+    return arr
+

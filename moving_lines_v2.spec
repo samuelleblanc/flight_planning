@@ -28,7 +28,7 @@ exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
           name='moving_lines_v2.exe',
-          debug=False,
+          debug=True,
           strip=None,
           upx=True,
           console=True )

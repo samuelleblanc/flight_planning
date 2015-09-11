@@ -10,7 +10,7 @@ import excel_interface as ex
 import map_interactive as mi
 import gui
 
-version = 'v0.5beta'
+version = 'v0.6beta'
 
 def Create_gui(vertical=True):
     'Program to set up gui interaction with figure embedded'
@@ -87,6 +87,7 @@ def build_buttons(ui,lines,vertical=True):
              ).pack(in_=ui.top,side=side,padx=8,pady=5)
     g.frame_select = tk.Frame(g.root,relief=tk.SUNKEN,bg='white')
     g.frame_select.pack(in_=ui.top,side=side,fill=tk.BOTH)
+    g.newflight_off = False
     g.flightselect_arr = []
     g.flightselect_arr.append(tk.Radiobutton(g.root,text=lines.ex.name,
                                              fg=lines.ex.color,
@@ -96,6 +97,7 @@ def build_buttons(ui,lines,vertical=True):
                                              state=tk.ACTIVE))
     g.flightselect_arr[0].pack(in_=g.frame_select,side=side,padx=4,pady=2,fill=tk.BOTH)
     g.flightselect_arr[0].select()
+    g.iactive.set(0)
     g.newflightpath = tk.Button(g.root,text='New flight path',
                                 command = g.gui_newflight)
     g.newflightpath.pack(in_=ui.top,padx=5,pady=5)

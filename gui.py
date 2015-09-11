@@ -20,6 +20,8 @@ class gui:
         Modified: Samuel LeBlanc, 2015-09-02, Santa Cruz, CA
 	          - added handlers for a few new buttons
 		  - modified imports to be more specific
+        Modified: Samuel LeBlanc, 2015-09-10, Santa Cruz, CA
+	          - adding new flight path for another plane capabilities
     """
     def __init__(self,line=None,root=None,noplt=False):
         import Tkinter as tk
@@ -28,14 +30,16 @@ class gui:
             return
         self.line = line
         self.flight_num = 0
-        self.iactive = 0
+        self.iactive = tk.IntVar()
+	self.iactive.set(0)
         self.colors = ['red']
-        self.colorcycle = ['red','blue','green','cyan','magenta','yellow']
+        self.colorcycle = ['red','blue','green','cyan','magenta','yellow','black','white']
         if not root:
             self.root = tk.Tk()
         else:
             self.root = root
         self.noplt = noplt
+	self.newflight_off = True
     
     def gui_file_select(self,ext='*',
                         ftype=[('Excel 1997-2003','*.xls'),('Excel','*.xlsx'),
@@ -99,7 +103,9 @@ class gui:
         if not self.line:
             print 'No line object'
             return
-        filename = self.gui_file_save(ext='.txt',ftype=[('All files','*.*'),
+	import tkMessageBox
+        tkMessageBox.showwarning('Saving one flight','Saving flight path of:%s' %self.line.ex.name)
+	filename = self.gui_file_save(ext='.txt',ftype=[('All files','*.*'),
                                                          ('Plain text','*.txt')])
         if not filename: return
         print 'Saving Text file to :'+filename
@@ -127,9 +133,16 @@ class gui:
         if not filename: return
         print 'Opening Excel File:'+filename
         import excel_interface as ex
-        self.line.ex = ex.dict_position(filename=filename)
-        self.line.onfigureenter([1]) # to force redraw and update from the newly opened excel
-        self.line.m.ax.set_title(self.line.ex.datestr)
+        self.flight_num = 0
+        self.iactive.set(0)
+        self.line.ex_arr = ex.populate_ex_arr(filename=filename,colorcycle=self.colorcycle)
+        self.line.m.ax.set_title(self.line.ex_arr[0].datestr)
+        for b in self.flightselect_arr:
+            b.destroy()	
+        for i in range(len(self.line.ex_arr)):
+	    self.line.ex = self.line.ex_arr[i]
+	    self.line.onfigureenter([1]) # to force redraw and update from the newly opened excel
+            self.load_flight(self.line.ex)
         self.line.figure.canvas.draw()
 
     def gui_save2gpx(self):
@@ -232,13 +245,31 @@ class gui:
 	ax2.grid()
 	canvas.draw()
 
+    def load_flight(self,ex):
+        'Program to populate the arrays of multiple flights with the info of one array'
+	import Tkinter as tk
+        self.flight_num = self.flight_num+1
+	self.colors.append(ex.color)
+        self.flightselect_arr.append(tk.Radiobutton(self.root,text=ex.name,
+                                                    fg=ex.color,
+                                                    variable=self.iactive,
+                                                    value=self.flight_num,
+                                                    indicatoron=0,
+                                                    command=self.gui_changeflight))
+        self.flightselect_arr[self.flight_num].pack(in_=self.frame_select,side=tk.TOP,
+                                                    padx=4,pady=2,fill=tk.BOTH)
+        self.line.newline()
+        self.iactive.set(self.flight_num)
+        self.gui_changeflight()
+
     def gui_newflight(self):
         'Program to call and create a new excel spreadsheet'
         import tkSimpleDialog,tkMessageBox
         import excel_interface as ex
         import Tkinter as tk
-        tkMessageBox.showwarning('Sorry','Feature not yet implemented')
-        return
+        if self.newflight_off:
+	     tkMessageBox.showwarning('Sorry','Feature not yet implemented')
+             return
         
         newname = tkSimpleDialog.askstring('New flight path',
                                            'New flight path name:')
@@ -248,31 +279,35 @@ class gui:
         self.flight_num = self.flight_num+1
         self.colors.append(self.colorcycle[self.flight_num])
         self.flightselect_arr.append(tk.Radiobutton(self.root,text=newname,
+	                                            fg=self.colorcycle[self.flight_num],
                                                     variable=self.iactive,
                                                     value=self.flight_num,
                                                     indicatoron=0,
                                                     command=self.gui_changeflight))
-        self.flightselect_arr[self.flight_num].pack(in_=self.frame_select,side=tk.BOTTOM,
-                                                    padx=2,pady=2,fill=tk.BOTH)
+        self.flightselect_arr[self.flight_num].pack(in_=self.frame_select,side=tk.TOP,
+                                                    padx=4,pady=2,fill=tk.BOTH)
         self.line.ex_arr.append(ex.dict_position(datestr=self.line.ex.datestr,
                                                  name=newname,
                                                  newsheetonly=True,
                                                  sheet_num=self.flight_num,
                                                  color=self.colorcycle[self.flight_num]))
         self.line.newline()
-        self.iactive = self.flight_num
+        self.iactive.set(self.flight_num)
         self.gui_changeflight()
-        
-
+       
     def gui_changeflight(self):
         'method to switch out the active flight path that is used'
-        self.flightselect_arr[self.iactive].select()
-        self.line.iactive = self.iactive
-        self.line.ex = self.line.ex_arr[self.iactive]
+	if self.newflight_off:
+	     import tkMessageBox
+	     tkMessageBox.showwarning('Sorry','Feature not yet implemented')
+	     return
+	self.flightselect_arr[self.iactive.get()].select()
+        self.line.iactive = self.iactive.get()
+        self.line.ex = self.line.ex_arr[self.iactive.get()]
         self.line.makegrey()
-        self.line.line = self.line.line_arr[self.iactive]
-        self.line.ex.switchsheet(self.iactive)
-        self.line.colorme(self.colors[self.iactive])
+        self.line.line = self.line.line_arr[self.iactive.get()]
+        self.line.ex.switchsheet(self.iactive.get())
+        self.line.colorme(self.colors[self.iactive.get()])
         
     def gui_savefig(self):
         'gui program to save the current figure as png'
