@@ -103,6 +103,7 @@ class dict_position:
         self.googleearthopened = False
         self.netkml = None
         self.verbose = verbose
+        self.name = name
         if datestr:
             self.datestr = datestr
         else:
@@ -189,6 +190,8 @@ class dict_position:
 	dt = []
 	Y,M,D = [int(s) for s in self.datestr.split('-')] 
 	for i,u in enumerate(self.utc):
+            if not u:
+                continue
 	    hh = int(u)
 	    mm = int((u-hh)*60.0)
 	    ss = int(((u-hh)*60.0-mm)*60.0)
@@ -595,7 +598,7 @@ class dict_position:
 	For input with idl and matlab
 	"""
 	f = open(filename,'w+')
-	f.write('#WP  Lat[+-90]  Lon[+-180]  Speed[m/s]  delayT[min]  Altitude[m]'+
+	f.write('#WP  Lon[+-180]  Lat[+-90]  Speed[m/s]  delayT[min]  Altitude[m]'+
                 '  CumLegT[H]  UTC[H]  LocalT[H]'+
 		'  LegT[H]  Dist[km]  CumDist[km]'+
                 '  Dist[nm]  CumDist[nm]  Speed[kt]'+
@@ -621,26 +624,27 @@ class dict_position:
         if not self.netkml:
             self.netkml = simplekml.Kml(open=1)
             self.netkml.name = 'Flight plan on '+self.datestr
-            net = self.netkml.newnetworklink(name=self.name)
+            net = self.netkml.newnetworklink(name=self.datestr)
             net.link.href = filename
             net.link.refreshmode = simplekml.RefreshMode.onchange
             filenamenet = filename+'_net.kml'
             self.netkml.save(filenamenet)
             self.kml = simplekml.Kml(open=1)
 	for j in xrange(Sheet.count()):
-	    self.switchsheet(j)
-	    self.name = Sheet(j).name
+            self.switchsheet(j)
+	    self.name = Sheet(j+1).name
 	    self.check_xl()
 	    self.calculate()
-            self.kml.document = simplekml.Folder(name = self.name)
-            self.print_points_kml()
-            self.print_path_kml()
+	    self.kmlfolder = self.kml.newfolder(name=self.name)
+            #self.kml.document = simplekml.Folder(name = self.name)
+            self.print_points_kml(self.kmlfolder)
+            self.print_path_kml(self.kmlfolder,color=self.color,j=j)
         self.kml.save(filename)
         if not self.googleearthopened:
             self.openGoogleEarth(filenamenet)
             self.googleearthopened = True
 
-    def print_points_kml(self):
+    def print_points_kml(self,folder):
         """
         print the points saved in lat, lon
         """
@@ -648,25 +652,26 @@ class dict_position:
             raise NameError('kml not initilaized')
             return
         for i in xrange(self.n):
-            pnt = self.kml.newpoint()
+            pnt = folder.newpoint()
             pnt.name = 'WP \# %i' % self.WP[i]
             pnt.coords = [(self.lon[i],self.lat[i])]
 	    pnt.description = """UTC[H]=%2.2f\nLocal[H]=%2.2f\nCumDist[km]=%f\nspeed[m/s]=%4.2f\ndelayT[min]=%f\nSZA[deg]=%3.2f\nAZI[deg]=%3.2f\nComments:%s""" % (self.utc[i],self.local[i],self.cumdist[i],
                                                                    self.speed[i],self.delayt[i],self.sza[i],
                                                                    self.azi[i],self.comments[i])
 
-    def print_path_kml(self):
+    def print_path_kml(self,folder,color='red',j=0):
         """
         print the path onto a kml file
         """
         import simplekml
         import numpy as np
-        path = self.kml.newlinestring(name=self.name)
+        cls = [simplekml.Color.red,simplekml.Color.blue,simplekml.Color.green,simplekml.Color.cyan,simplekml.Color.magenta]
+        path = folder.newlinestring(name=self.name)
         coords = [(lon,lat,alt) for (lon,lat,alt) in np.array((self.lon,self.lat,self.alt)).T]
         path.coords = coords
         path.altitudemode = simplekml.AltitudeMode.clamptoground
         path.extrude = 1
-        path.style.linestyle.color = simplekml.Color.red
+        path.style.linestyle.color = cls[j]
         path.style.linestyle.width = 4.0
 
     def openGoogleEarth(self,filename=None):

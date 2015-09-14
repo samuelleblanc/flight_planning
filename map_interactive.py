@@ -306,6 +306,8 @@ class LineBuilder:
                 self.lbl = [self.line.axes.annotate(s+'%i'%i,
                                                     (self.xs[i-1],self.ys[i-1]))]
             else:
+                if not self.xs[i-1]:
+                    continue
                 self.lbl.append(self.line.axes.
                                 annotate(s+'%i'%i,(self.xs[i-1],self.ys[i-1])))
         self.line.figure.canvas.draw()

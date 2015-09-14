@@ -1,0 +1,1 @@
+nuitka --standalone --recurse-not-to=py2exe --recurse-not-to=pandas --recurse-not-to=zmq --recurse-not-to=geopy --recurse-not-to=IPython --recurse-not-to=jinja2 --recurse-not-to=nose --recurse-not-to=sphinx --recurse-not-to=sqlalchemy --rescurse-not-to=pyqt moving_lines_v2.py
