@@ -131,19 +131,30 @@ class gui:
                                                          ('Excel 1997-2003','*.xls'),
                                                          ('Excel','*.xlsx')])
         if not filename: return
-        print 'Opening Excel File:'+filename
+        self.line.ex.wb.close()
+        self.line.tb.set_message('Opening Excel File:'+filename)
         import excel_interface as ex
         self.flight_num = 0
         self.iactive.set(0)
         self.line.ex_arr = ex.populate_ex_arr(filename=filename,colorcycle=self.colorcycle)
         self.line.m.ax.set_title(self.line.ex_arr[0].datestr)
         for b in self.flightselect_arr:
-            b.destroy()	
+            b.destroy()
+        self.flightselect_arr = []
+        try:
+            self.line.m.figure_under.remove()
+        except:
+            pass
+        try:
+            for s in self.sat_obj:
+                s.remove()
+        except:
+            pass
         for i in range(len(self.line.ex_arr)):
 	    self.line.ex = self.line.ex_arr[i]
 	    self.line.onfigureenter([1]) # to force redraw and update from the newly opened excel
             self.load_flight(self.line.ex)
-        self.line.figure.canvas.draw()
+        self.line.line.figure.canvas.draw()
 
     def gui_save2gpx(self):
         'Calls the save2gpx excel_interface method'
@@ -248,8 +259,9 @@ class gui:
     def load_flight(self,ex):
         'Program to populate the arrays of multiple flights with the info of one array'
 	import Tkinter as tk
-        self.flight_num = self.flight_num+1
 	self.colors.append(ex.color)
+	print 'load_flight value set:%i, name:%s' %(self.flight_num,ex.name)
+
         self.flightselect_arr.append(tk.Radiobutton(self.root,text=ex.name,
                                                     fg=ex.color,
                                                     variable=self.iactive,
@@ -261,6 +273,7 @@ class gui:
         self.line.newline()
         self.iactive.set(self.flight_num)
         self.gui_changeflight()
+        self.flight_num = self.flight_num+1
 
     def gui_newflight(self):
         'Program to call and create a new excel spreadsheet'
@@ -375,9 +388,13 @@ class gui:
         answer = askquestion('Verify import satellite tracks','Do you want to get the satellite tracks from the internet?')
         if answer == 'yes':
             from map_interactive import load_sat_from_net, get_sat_tracks, plot_sat_tracks
+            self.line.tb.set_message('Loading satellite kml File from internet')
             kml = load_sat_from_net()
-            sat = get_sat_tracks(self.line.ex.datestr,kml)
-            plot_sat_tracks(self.line.m,sat)
+            if kml:
+                self.line.tb.set_message('parsing file...')
+                sat = get_sat_tracks(self.line.ex.datestr,kml)
+                self.line.tb.set_message('Plotting satellite tracks')
+                self.sat_obj = plot_sat_tracks(self.line.m,sat)
         elif answer ==  'no':
             from map_interactive import load_sat_from_file, get_sat_tracks, plot_sat_tracks
             filename = self.gui_file_select(ext='.kml',ftype=[('All files','*.*'),
@@ -385,10 +402,12 @@ class gui:
             if not filename:
                 print 'Cancelled, no file selected'
                 return
-            print 'Opening kml File:'+filename
+            self.line.tb.set_message('Opening kml File:'+filename)
             kml = load_sat_from_file(filename)
+            self.line.tb.set_message('parsing file...')
             sat = get_sat_tracks(self.line.ex.datestr,kml)
-            plot_sat_tracks(self.line.m,sat)
+            self.line.tb.set_message('Plotting satellite tracks') 
+            self.sat_obj = plot_sat_tracks(self.line.m,sat)
 
     def gui_addbocachica(self):
         'GUI handler for adding bocachica foreacast maps to basemap plot'
@@ -404,7 +423,7 @@ class gui:
         print 'Opening png File:'+filename
 	img = imread(filename)
         ll_lat,ll_lon,ur_lat,ur_lon = -40.0,-30.0,10.0,40.0
-	self.line.addfigure_under(img[42:674,50:1015,:],ll_lat,ll_lon,ur_lat,ur_lon)
+        self.line.addfigure_under(img[42:674,50:1015,:],ll_lat,ll_lon,ur_lat,ur_lon)
 	#self.line.addfigure_under(img[710:795,35:535,:],ll_lat-7.0,ll_lon,ll_lat-5.0,ur_lon-10.0,outside=True)
 
 

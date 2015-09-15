@@ -20,6 +20,7 @@ def Create_gui(vertical=True):
     ui.root = tk.Tk()
     ui.root.wm_title('Flight planning by Samuel LeBlanc, NASA Ames, '+version)
     ui.root.geometry('900x950')
+    ui.root.iconbitmap('arc.ico')
     ui.top = tk.Frame(ui.root)
     ui.bot = tk.Frame(ui.root)
     if vertical:
@@ -150,29 +151,48 @@ def init_plot(m,color='red'):
             'Press i to restart interaction\\n')
     return line
 
+def stopandquit():
+    'simple function to handle the stop and quit'
+    lines.ex.wb.close()
+    ui.root.quit()
+    ui.root.destroy()
+
 def Create_interaction(test=False,**kwargs):
     ui = Create_gui()
-
+    ui.tb.set_message('Creating basemap')
     m = mi.build_basemap(ax=ui.ax1)
     line = init_plot(m,color='red')
 
     flabels = 'labels.txt'
     faero = 'aeronet_locations.txt'
     try:
+        ui.tb.set_message('putting labels and aeronet')
         mi.plot_map_labels(m,flabels)
         mi.plot_map_labels(m,faero,marker='*',skip_lines=2,color='y')
     except:
         print 'Label files not found!'
         
     get_datestr(ui)
+    ui.tb.set_message('making the Excel connection')
     wb = ex.dict_position(datestr=ui.datestr,color=line.get_color(),**kwargs)
+    ui.tb.set_message('Building the interactivity on the map')
     lines = mi.LineBuilder(line,m=m,ex=wb,tb=ui.tb)
+    ui.tb.set_message('Saving temporary excel file')
     savetmp(ui,wb)
     
-    build_buttons(ui,lines)    
+    build_buttons(ui,lines)
+    ui.tb.set_message('Ready for interaction')
+    def stopandquit():
+        'simple function to handle the stop and quit'
+        lines.ex.wb.close()
+        ui.root.quit()
+        ui.root.destroy()
+
+    ui.root.protocol('WM_DELETE_WINDOW',stopandquit)
     if not test:
         ui.root.mainloop()
     return lines,ui
 
 if __name__ == "__main__":
     lines,ui = Create_interaction(test=True)
+

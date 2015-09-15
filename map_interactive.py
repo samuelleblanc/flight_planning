@@ -242,7 +242,7 @@ class LineBuilder:
 
     def onfigureenter(self,event):
         'event handler for updating the figure with excel data'
-        self.line.axes.format_coord = 'Calculating ...'
+        self.tb.set_message('Recalculating ...')
         if self.verbose:
             print 'entered figure'#, event
         if self.ex:
@@ -257,7 +257,7 @@ class LineBuilder:
                 self.line.set_data(self.xs,self.ys)
                 self.line.figure.canvas.draw()
         self.update_labels()
-        self.line.axes.format_coord = 'Done Calculating!'
+        self.tb.set_message('Done Recalculating')
         self.line.axes.format_coord = self.format_position_simple
                 
     def format_position_simple(self,x,y):
@@ -485,9 +485,14 @@ def load_sat_from_net():
     from pykml import parser
     today = time.strftime('%Y%m%d')
     site = 'http://avdc.gsfc.nasa.gov/download_2.php?site=98675770&id=25&go=download&path=%2FSubsatellite%2Fkml&file=A-Train_subsatellite_prediction_'+today+'T000000Z.kml'
-    response = urlopen(site)
-    print 'Getting the kml prediction file from avdc.gsfc.nasa.gov'
-    r = response.read()
+    try:
+        response = urlopen(site)
+        print 'Getting the kml prediction file from avdc.gsfc.nasa.gov'
+        r = response.read()
+    except:
+        import tkMessageBox
+        tkMessageBox.showerror('No sat','There was an error communicating with avdc.gsfc.nasa.gov')
+        return None
     kml = parser.fromstring(r)
     print 'Kml file read...'
     return kml
@@ -536,11 +541,12 @@ def plot_sat_tracks(m,sat):
     """
     Program that goes through and plots the satellite tracks
     """
+    sat_obj = []
     for k in sat.keys():
         (lon,lat) = sat[k]
         x,y = m(lon,lat)
-        m.plot(x,y,'.',label=k)
-    m.ax.legend(loc='lower right',bbox_to_anchor=(1.0,1.04))
-
+        sat_obj.append(m.plot(x,y,'.',label=k))
+    sat_obj.append(m.ax.legend(loc='lower right',bbox_to_anchor=(1.0,1.04)))
+    return lines_sat
         
     

@@ -93,6 +93,7 @@ class dict_position:
         self.endbearing = self.lon*0.0
         self.turn_deg = self.lon*0.0
         self.turn_time = self.lon*0.0
+        self.climb_time = self.lon*0.0
         self.sza = self.lon*0.0
         self.azi = self.lon*0.0
         self.datetime = self.lon*0.0
@@ -104,6 +105,10 @@ class dict_position:
         self.netkml = None
         self.verbose = verbose
         self.name = name
+        if any(p in self.name for p in ['p3','P3','P-3','p-3','p 3','P 3']): self.platform = 'p3'
+        if any(p in self.name for p in ['er2','ER2','ER-2','er-2','ER 2','er 2']): self.platform = 'er2'
+        if any(p in self.name for p in ['dc8','DC8','DC-8','dc-8','DC 8','dc 8']): self.platform = 'er2'
+        if not self.platform: self.platform = 'NA'
         if datestr:
             self.datestr = datestr
         else:
@@ -135,17 +140,12 @@ class dict_position:
         """
         default_bank_angle = 15.0
         self.rate_of_turn = 1091.0*np.tan(default_bank_angle*np.pi/180)/self.speed[0] # degree per second
+        if not np.isfinite(self.rate_of_turn):
+            self.rate_of_turn = 2.4
         self.n = len(self.lon)
         self.WP = range(1,self.n+1)
         for i in xrange(self.n-1):
             self.dist[i+1] = mu.spherical_dist([self.lat[i],self.lon[i]],[self.lat[i+1],self.lon[i+1]])
-            if np.isfinite(self.speed.astype(float)[i+1]):
-                self.speed_kts[i+1] = self.speed[i+1]*1.94384449246
-            elif np.isfinite(self.speed_kts.astype(float)[i+1]):
-                self.speed[i+1] = self.speed_kts[i+1]/1.94384449246
-            else:
-                self.speed[i+1] = self.speed[i]
-                self.speed_kts[i+1] = self.speed[i+1]*1.94384449246
             if np.isfinite(self.alt.astype(float)[i+1]):
                 self.alt_kft[i+1] = self.alt[i+1]*3.28084/1000.0
             elif np.isfinite(self.alt_kft.astype(float)[i+1]):
@@ -153,6 +153,16 @@ class dict_position:
             else:
                 self.alt[i+1] = self.alt[i]
                 self.alt_kft[i+1] = self.alt[i+1]*3.28084/1000.0
+            if np.isfinite(self.speed.astype(float)[i+1]):
+                self.speed_kts[i+1] = self.speed[i+1]*1.94384449246
+            elif np.isfinite(self.speed_kts.astype(float)[i+1]):
+                self.speed[i+1] = self.speed_kts[i+1]/1.94384449246
+            else:
+                if self.platform=='p3':
+                    self.speed[i+1] = self.calcspeed(self.alt[i],self.alt[i+1])
+                else:
+                    self.speed[i+1] = self.speed[i]
+                self.speed_kts[i+1] = self.speed[i+1]*1.94384449246  
             self.bearing[i] = mu.bearing([self.lat[i],self.lon[i]],[self.lat[i+1],self.lon[i+1]])
             self.endbearing[i] = (mu.bearing([self.lat[i+1],self.lon[i+1]],[self.lat[i],self.lon[i]])+180)%360.0
             try:
@@ -168,19 +178,77 @@ class dict_position:
                 self.delayt[i+1] = self.turn_time[i+1]
             #else:
             #    self.delayt[i+1] = self.delayt[i+1]+self.turn_time[i+1]
-            self.legt[i+1] = (self.dist[i+1]/(self.speed[i+1]/1000.0))/3600.0 + self.delayt[i+1]/60.0
+            self.climb_time[i+1] = self.calc_climb_time(self.alt[i],self.alt[i+1]) #defaults to P3 speed
+            self.legt[i+1] = (self.dist[i+1]/(self.speed[i+1]/1000.0))/3600.0 + \
+                             self.delayt[i+1]/60.0 + self.climb_time[i+1]/60.0
             self.utc[i+1] = self.utc[i]+self.legt[i+1]
+            if not np.isfinite(self.utc[i+1]):
+                import pdb; pdb.set_trace()
             
         self.local = self.utc+self.UTC_conversion
         self.dist_nm = self.dist*0.53996
         self.cumdist = self.dist.cumsum()
         self.cumdist_nm = self.dist_nm.cumsum()
         self.cumlegt = np.nan_to_num(self.legt).cumsum()
-
+        
 	self.datetime = self.calcdatetime()
 	self.sza,self.azi = mu.get_sza_azi(self.lat,self.lon,self.datetime)
         
         self.time2xl()
+
+    def calcspeed(self,alt0,alt1):
+        'Simple program to estimate the speed of the P3 from Steven Howell based on TRACE-P'
+        if self.platform=='p3':
+            TAS = 130.0+alt1/1000.0*7.5
+            if alt1>6000.0:
+                TAS = 130.0+6*7.5
+            if alt1>alt0+200.0:
+                TAS = TAS -15.0
+        else:
+            TAS = 130.0
+        return TAS
+
+    def calc_climb_time(self,alt0,alt1):
+        """
+        Simple program to calculate the climb/descent time from previous missions
+        Uses parameterization for P3 and ER2 for now.
+        Default parameters are used when nothing is set.
+        Uses altitude from previous point (alt0) and next point (alt1) in meters
+        returns minutes of climb/descent time
+        """
+        if alt1>alt0:
+            climb = True
+        else:
+            climb = False
+        if self.platform=='p3':
+            if climb:
+                if alt1 > 6000:
+                    speed = 4.5-7e-05*(alt1+alt0)/2.0
+                else:
+                    speed = 5.0
+            else:
+                speed = -5.0
+        elif self.platform=='er2':
+            if climb:
+                speed = 24.0-0.0011*(alt1+alt0)/2.0
+            else:
+                speed = -10.0
+        elif self.platform=='dc8':
+            if climb:
+                speed = 15.0-0.001*(alt1+alt0)/2.0
+            else:
+                speed = -10.0
+        elif self.platform=='c130':
+            if climb:
+                speed = 10.0=0.001*(alt1+alt0)/2.0
+            else:
+                speed = -10.0
+        else:
+            if climb:
+                speed = 5.0
+            else:
+                speed = -5.0
+        return (alt1-alt0)/speed/60.0
 
     def calcdatetime(self):
         """
@@ -188,11 +256,14 @@ class dict_position:
 	"""
 	from datetime import datetime
 	dt = []
-	Y,M,D = [int(s) for s in self.datestr.split('-')] 
+	Y,M,D = [int(s) for s in self.datestr.split('-')]
+	print self.utc
 	for i,u in enumerate(self.utc):
-            if not u:
+            try:
+                hh = int(u)
+            except ValueError:
+                print 'Problem on line :%i with value %f'%(i,u)
                 continue
-	    hh = int(u)
 	    mm = int((u-hh)*60.0)
 	    ss = int(((u-hh)*60.0-mm)*60.0)
 	    ms = int((((u-hh)*60.0-mm)*60.0-ss)*1000.0)
@@ -517,6 +588,8 @@ class dict_position:
             return
         self.name = Sheet(sheet_num).name
 	Sheet(sheet_num).activate()
+	print 'Activating sheet:%i, name:%s'%(sheet_num,Sheet(sheet_num).name)
+	wait = raw_input("PRESS ENTER TO CONTINUE.")
         self.datestr = str(Range('U1').value).split(' ')[0]
         if not self.datestr:
             print 'No datestring found! Using todays date'
@@ -753,6 +826,7 @@ def populate_ex_arr(filename=None,colorcycle=['red','blue','green']):
     wb = Workbook(filename)
     num = Sheet.count()
     for i in range(num):
+        print 'doing sheet_num:%i'%(i+1)
         arr.append(ex.dict_position(filename=filename,sheet_num=i+1,color=colorcycle[i]))
     return arr
 
