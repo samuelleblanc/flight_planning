@@ -1,7 +1,7 @@
 # -*- mode: python -*-
 a = Analysis(['moving_lines_v2.py'],
              pathex=['C:\\Users\\sleblan2\\Research\\python_codes\\flight_planning'],
-             hiddenimports=['matplotlib'],
+             hiddenimports=[],
              hookspath=['.'],
              runtime_hooks=None)
 pyz = PYZ(a.pure)
@@ -30,6 +30,7 @@ exe = EXE(pyz,
           a.scripts,
           a.binaries,
 	  a.zipfiles,
+	  a.datas,
           exclude_binaries=False,
           name='moving_lines.exe',
           debug=False,
@@ -37,8 +38,8 @@ exe = EXE(pyz,
           upx=False,
           console=True )
 
-coll = COLLECT(exe,
-               a.datas,
-               strip=None,
-               upx=False,
-               name='moving_lines_v3')
+#coll = COLLECT(exe,
+#               a.datas,
+#               strip=None,
+#               upx=False,
+#               name='moving_lines_v3')
