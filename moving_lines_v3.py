@@ -1,3 +1,31 @@
+"""
+    Purpose:
+        create interaction via plotting lines and clickable map
+    Inputs: 
+        test: if set to true, then command line is still useable
+    Outputs:
+        lines: linebuilder class object
+        ui: specil ui to hold the gui interface objects
+    Dependencies:
+        numpy
+        Tkinter
+        datetime
+        map_utils
+        excel_interface
+        map_interactive
+        gui
+        Basemap
+    Required files:
+        labels.txt: file with labels of locations
+        aeronet_locations.txt: file with location of aeronet sites
+        arc.ico: icon for main window
+    Example:
+        ...
+    Modification History:
+        Written: Samuel LeBlanc, 2015-08-07, Santa Cruz, CA
+        Modified: 
+"""
+
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
 import Tkinter as tk
@@ -10,7 +38,7 @@ import excel_interface as ex
 import map_interactive as mi
 import gui
 
-version = 'v0.6beta'
+version = 'v0.7beta'
 
 def Create_gui(vertical=True):
     'Program to set up gui interaction with figure embedded'
@@ -20,7 +48,10 @@ def Create_gui(vertical=True):
     ui.root = tk.Tk()
     ui.root.wm_title('Flight planning by Samuel LeBlanc, NASA Ames, '+version)
     ui.root.geometry('900x950')
-    ui.root.iconbitmap('arc.ico')
+    try:
+        ui.root.iconbitmap('arc.ico')
+    except:
+        pass
     ui.top = tk.Frame(ui.root)
     ui.bot = tk.Frame(ui.root)
     if vertical:
@@ -70,6 +101,7 @@ def build_buttons(ui,lines,vertical=True):
     g.bsave2gpx = tk.Button(g.root,text='Save to GPX',
                             command=g.gui_save2gpx)
     g.refresh.pack(in_=ui.top,side=side,fill=tk.X,pady=8)
+    tk.Label(g.root,text='File options').pack(in_=ui.top,side=side) 
     g.bopenfile.pack(in_=ui.top,side=side)
     g.bsavexl.pack(in_=ui.top,side=side)
     g.bsavetxt.pack(in_=ui.top,side=side)
@@ -78,6 +110,7 @@ def build_buttons(ui,lines,vertical=True):
     g.bsave2gpx.pack(in_=ui.top,side=side)
     tk.Frame(g.root,height=h,width=w,bg='black',relief='sunken'
              ).pack(in_=ui.top,side=side,padx=8,pady=5)
+    tk.Label(g.root,text='Other plots').pack(in_=ui.top,side=side)
     g.bplotalt = tk.Button(g.root,text='Plot alt vs time',
                            command=g.gui_plotalttime)
     g.bplotalt.pack(in_=ui.top,side=side)
@@ -88,6 +121,7 @@ def build_buttons(ui,lines,vertical=True):
              ).pack(in_=ui.top,side=side,padx=8,pady=5)
     g.frame_select = tk.Frame(g.root,relief=tk.SUNKEN,bg='white')
     g.frame_select.pack(in_=ui.top,side=side,fill=tk.BOTH)
+    tk.Label(g.root,text='Flight paths:',bg='white').pack(in_=g.frame_select,side=side)
     g.newflight_off = False
     g.flightselect_arr = []
     g.flightselect_arr.append(tk.Radiobutton(g.root,text=lines.ex.name,
@@ -95,15 +129,25 @@ def build_buttons(ui,lines,vertical=True):
                                              variable=g.iactive,value=0,
                                              indicatoron=0,
                                              command=g.gui_changeflight,
-                                             state=tk.ACTIVE))
+                                             state=tk.ACTIVE,bg='white'))
     g.flightselect_arr[0].pack(in_=g.frame_select,side=side,padx=4,pady=2,fill=tk.BOTH)
     g.flightselect_arr[0].select()
     g.iactive.set(0)
     g.newflightpath = tk.Button(g.root,text='New flight path',
                                 command = g.gui_newflight)
-    g.newflightpath.pack(in_=ui.top,padx=5,pady=5)
+    g.newflightpath.pack(in_=ui.top,padx=5,pady=2)
+    #g.removeflightpath = tk.Button(g.root,text='Remove flight path',
+    #                               command = g.gui_removeflight)
+    #g.removeflightpath.pack(in_=ui.top,padx=5,pady=5)
+    g.addpoint = tk.Button(g.root,text='Add point dialog',
+                           command = g.gui_addpoint)
+    g.addpoint.pack(in_=ui.top,padx=5,pady=2)
+    g.movepoints = tk.Button(g.root,text='Move points',
+                             command = g.gui_movepoints)
+    g.movepoints.pack(in_=ui.top,padx=5,pady=2)
     tk.Frame(g.root,height=h,width=w,bg='black',relief='sunken'
              ).pack(in_=ui.top,side=side,padx=8,pady=5)
+    tk.Label(g.root,text='Extra info:').pack(in_=ui.top,side=side)
     g.baddsat = tk.Button(g.root,text='Add Satellite tracks',
                          command = g.gui_addsat)
     g.baddsat.pack(in_=ui.top)

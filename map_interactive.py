@@ -32,6 +32,9 @@ class LineBuilder:
         Written: Samuel LeBlanc, 2015-08-07, Santa Cruz, CA
         Modified: Samuel LeBlanc, 2015-08-21, Santa Cruz, CA
                  - added new plotting with range circles
+        Modified: Samuel LeBlanc, 2015-09-15, NASA Ames, Santa Cruz, CA
+                 - added new points, move points from dialog windows
+                 - bug fixes
     """
     def __init__(self, line,m=None,ex=None,verbose=False,tb=None):
         """
@@ -91,6 +94,8 @@ class LineBuilder:
         self.line.figure.canvas.mpl_disconnect(self.cid_onrelease)
         self.line.figure.canvas.mpl_disconnect(self.cid_onmotion)
         self.line.figure.canvas.mpl_disconnect(self.cid_onkeyrelease)
+        self.line.figure.canvas.mpl_disconnect(self.cid_onfigureenter)
+        self.line.figure.canvas.mpl_disconnect(self.cid_onaxesenter)
 
     def onpress(self,event):
         'Function that enables either selecting a point, or creating a new point when clicked'
@@ -343,6 +348,11 @@ class LineBuilder:
 	line_new, = self.m.plot(x[0],y[0],'o-',linewidth=self.line.get_linewidth()) 
 	self.line_arr.append(line_new)
 
+    def removeline(self,i):
+        'Program to remove one line object from the LineBuilder class'
+        self.line_arr[i].set_data([],[])
+        self.line_arr[i].remove()
+
     def addfigure_under(self,img,ll_lat,ll_lon,ur_lat,ur_lon,outside=False,**kwargs):
     	'Program to add a figure under the basemap plot'
 	left,bottom = self.m(ll_lon,ll_lat)
@@ -360,6 +370,47 @@ class LineBuilder:
 	    u = self.m.imshow(img[ix,:,:][:,iy,:],clip_on=False,**kwargs)
 	self.line.figure.canvas.draw()
 
+    def newpoint(self,bearing,distance):
+        'program to add a new point at the end of the current track with a bearing and distance'
+        newlon,newlat,baz = shoot(self.lons[-1],self.lats[-1],bearing,maxdist=distance)
+        if self.verbose:
+            print 'New points at lon: %f, lat: %f' %(newlon,newlat)
+        if self.m:
+            x,y = self.m(newlon,newlat)
+            self.lons.append(newlon)
+            self.lats.append(newlat)
+        else:
+            x,y = newlon,newlat
+        self.xs.append(x)
+        self.ys.append(y)
+        self.line.set_data(self.xs, self.ys)
+        if self.ex:
+            self.ex.appends(self.lats[-1],self.lons[-1])
+            self.ex.calculate()
+            self.ex.write_to_excel()
+        self.update_labels()
+        self.line.figure.canvas.draw()
+
+    def movepoint(self,i,bearing,distance):
+        'Program to move a point a certain distance and bearing'
+        newlon,newlat,baz = shoot(self.lons[i],self.lats[i],bearing,maxdist=distance)
+        if self.m:
+            x,y = self.m(newlon,newlat)
+            self.lons[i] = newlon
+            self.lats[i] = newlat
+        else:
+            x,y = newlon,newlat
+        self.xs[i] = x
+        self.ys[i] = y
+        self.line.set_data(self.xs, self.ys)
+        if self.ex:
+            self.ex.mods(i,self.lats[i],self.lons[i])
+            self.ex.calculate()
+            self.ex.write_to_excel()
+        self.update_labels()
+        self.line.figure.canvas.draw()
+
+        
 def build_basemap(lower_left=[-20,-30],upper_right=[20,10],ax=None,proj='cyl'):
     """
     First try at a building of the basemap with a 'stere' projection

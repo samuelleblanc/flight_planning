@@ -1,3 +1,5 @@
+import tkSimpleDialog
+
 class gui:
     """
     Purpose:
@@ -131,6 +133,7 @@ class gui:
                                                          ('Excel 1997-2003','*.xls'),
                                                          ('Excel','*.xlsx')])
         if not filename: return
+        self.line.disconnect()
         self.line.ex.wb.close()
         self.line.tb.set_message('Opening Excel File:'+filename)
         import excel_interface as ex
@@ -150,11 +153,13 @@ class gui:
                 s.remove()
         except:
             pass
+        self.colors = []
         for i in range(len(self.line.ex_arr)):
 	    self.line.ex = self.line.ex_arr[i]
 	    self.line.onfigureenter([1]) # to force redraw and update from the newly opened excel
             self.load_flight(self.line.ex)
         self.line.line.figure.canvas.draw()
+        self.line.connect()
 
     def gui_save2gpx(self):
         'Calls the save2gpx excel_interface method'
@@ -260,14 +265,14 @@ class gui:
         'Program to populate the arrays of multiple flights with the info of one array'
 	import Tkinter as tk
 	self.colors.append(ex.color)
-	print 'load_flight value set:%i, name:%s' %(self.flight_num,ex.name)
+	self.line.tb.set_message('load_flight values for:%s' %ex.name)
 
         self.flightselect_arr.append(tk.Radiobutton(self.root,text=ex.name,
                                                     fg=ex.color,
                                                     variable=self.iactive,
                                                     value=self.flight_num,
                                                     indicatoron=0,
-                                                    command=self.gui_changeflight))
+                                                    command=self.gui_changeflight,bg='white'))
         self.flightselect_arr[self.flight_num].pack(in_=self.frame_select,side=tk.TOP,
                                                     padx=4,pady=2,fill=tk.BOTH)
         self.line.newline()
@@ -296,7 +301,7 @@ class gui:
                                                     variable=self.iactive,
                                                     value=self.flight_num,
                                                     indicatoron=0,
-                                                    command=self.gui_changeflight))
+                                                    command=self.gui_changeflight,bg='white'))
         self.flightselect_arr[self.flight_num].pack(in_=self.frame_select,side=tk.TOP,
                                                     padx=4,pady=2,fill=tk.BOTH)
         self.line.ex_arr.append(ex.dict_position(datestr=self.line.ex.datestr,
@@ -307,7 +312,30 @@ class gui:
         self.line.newline()
         self.iactive.set(self.flight_num)
         self.gui_changeflight()
-       
+
+    def gui_removeflight(self):
+        'Program to call and remove a flight path from the plotting'
+        import tkSimpleDialog,tkMessageBox
+        tkMessageBox.showwarning('Sorry','Feature not yet implemented')
+        return
+        import excel_interface as ex
+        import Tkinter as tk
+        from gui import Select_flights
+        self.name_arr = []
+        for x in self.line.ex_arr:
+            self.name_arr.append(x)
+        flights = Select_flights(self.name_arr,title='Delete Flights',Text='Choose flights to delete')
+        for i,val in enumerate(flights.result):
+            if val:
+                name2del = self.line.ex_arr[i].name
+                self.flightselect_arr[i].destroy()
+                for i in range(i,len(self.flightselect_arr)):
+                    self.flightselect_arr[i].configure({'value':i-1})
+                self.flightselect_arr[i].remove()
+                self.line.removeline(i)
+                self.line.ex_arr[i].exremove()
+                self.line.ex_arr[i].remove()
+    
     def gui_changeflight(self):
         'method to switch out the active flight path that is used'
 	if self.newflight_off:
@@ -382,6 +410,24 @@ class gui:
         #bmaketext.pack()
         self.root.mainloop()
 
+    def gui_addpoint(self):
+        'Gui button to add a point via a dialog'
+        from gui import Move_point
+        m = Move_point()
+        self.line.newpoint(m.bear,m.dist)
+
+    def gui_movepoints(self):
+        'GUI button to move many points at once'
+        from gui import Select_flights,Move_point
+        wp_arr = []
+        for w in self.line.ex.WP:
+            wp_arr.append('WP #%i'%w)
+        p = Select_flights(wp_arr,title='Move points',Text='Select points to move:')
+        m = Move_point()
+        for i,val in enumerate(p.result):
+            if val:
+                self.line.movepoint(i,m.bear,m.dist)
+
     def gui_addsat(self):
         'Gui button to add the satellite tracks'
         from tkMessageBox import askquestion
@@ -452,3 +498,91 @@ class gui:
 	    ur_lon = tkSimpleDialog.askfloat('Upper right lon','Upper right lon? [deg]')
 
 	self.line.addfigure_under(img,ll_lat,ll_lon,ur_lat,ur_lon,alpha=0.6)
+
+class Select_flights(tkSimpleDialog.Dialog):
+    """
+    Purpose:
+        Dialog box that loads a list of points or flights to be selected.
+    Inputs:
+        tkSimple.Dialog
+        pt_list: list of string array in the correct positions
+        title: title of dialog window
+        text: text to be displayed before the checkbox selection
+    Outputs:
+        list of integers that are selected
+    Dependencies:
+        tkSimpleDialog
+    MOdifications:
+        written: Samuel LeBlanc, 2015-09-14, NASA Ames, Santa Cruz, CA
+    """
+    def __init__(self,pt_list,title='Choose flight',Text='Select points:',parent=None):
+        import Tkinter as tk
+        if not parent:
+            parent = tk._default_root
+        self.pt_list = pt_list
+        self.Text = Text
+        tkSimpleDialog.Dialog.__init__(self,parent,title)
+        pass
+    
+    def body(self,master):
+        import tkSimpleDialog
+        import Tkinter as tk
+        self.results = []
+        tk.Label(master, text=self.Text).grid(row=0)
+        self.cbuttons = []
+        for i,l in enumerate(self.pt_list):
+            var = tk.IntVar()
+            self.results.append(var)
+            self.cbuttons.append(tk.Checkbutton(master,text=l, variable=var))
+            self.cbuttons[i].grid(row=i+1,sticky=tk.W)
+        return
+
+    def apply(self):
+        self.result = map((lambda var: var.get()),self.results)
+        return self.result
+
+class Move_point(tkSimpleDialog.Dialog):
+    """
+    Purpose:
+        Dialog box that gets user input for point to add
+    Inputs:
+        tkSimple.Dialog
+        title: title of dialog box (defaults to 'New point info'
+    Outputs:
+        distance and direction of new point
+    Dependencies:
+        tkSimpleDialog
+    MOdifications:
+        written: Samuel LeBlanc, 2015-09-14, NASA Ames, Santa Cruz, CA
+    """
+    def __init__(self,title='New point info'):
+        import Tkinter as tk
+        parent = tk._default_root
+        tkSimpleDialog.Dialog.__init__(self,parent,title)
+        pass
+    
+    def body(self,master):
+        import tkSimpleDialog
+        import Tkinter as tk
+        tk.Label(master, text='Enter Distance [km]').grid(row=0)
+        tk.Label(master, text='Enter Bearing, 0-360, [degrees CW from North]').grid(row=1)
+        self.edist = tk.Entry(master)
+        self.ebear = tk.Entry(master)
+        self.edist.grid(row=0,column=1)
+        self.ebear.grid(row=1,column=1)
+        return self.edist
+
+    def apply(self):
+        self.dist = float(self.edist.get())
+        self.bear = float(self.ebear.get())
+        return self.dist,self.bear
+
+    def validate(self):
+        try:
+            self.dist = float(self.edist.get())
+            self.bear = float(self.ebear.get())
+        except ValueError:
+            import tkMessageBox
+            tkMessageBox.showwarning('Bad input','Can not format values, try again')
+        return True
+            

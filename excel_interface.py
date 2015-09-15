@@ -105,10 +105,8 @@ class dict_position:
         self.netkml = None
         self.verbose = verbose
         self.name = name
-        if any(p in self.name for p in ['p3','P3','P-3','p-3','p 3','P 3']): self.platform = 'p3'
-        if any(p in self.name for p in ['er2','ER2','ER-2','er-2','ER 2','er 2']): self.platform = 'er2'
-        if any(p in self.name for p in ['dc8','DC8','DC-8','dc-8','DC 8','dc 8']): self.platform = 'er2'
-        if not self.platform: self.platform = 'NA'
+        self.platform = self.check_platform(name)
+
         if datestr:
             self.datestr = datestr
         else:
@@ -127,6 +125,18 @@ class dict_position:
             self.calculate()
             self.write_to_excel()
 	    self.sheet_num = sheet_num
+    def check_platform(self,name):
+        'Simple program that check the name of the flight path to platforms names'
+        if any(p in name for p in ['p3','P3','P-3','p-3','p 3','P 3']): platform = 'p3'
+        if any(p in name for p in ['er2','ER2','ER-2','er-2','ER 2','er 2']): platform = 'er2'
+        if any(p in name for p in ['dc8','DC8','DC-8','dc-8','DC 8','dc 8']): platform = 'dc8'
+        if any(p in name for p in ['c130','C130','C-130','c-130','C 130','c 130']): platform = 'c130'
+        if any(p in name for p in ['bae','BAE','146']): platform = 'bae146'
+        try:
+            if not platform: platform = 'NA'
+        except UnboundLocalError:
+            platform = 'NA'
+        return platform
 
     def calculate(self):
         """
@@ -183,6 +193,7 @@ class dict_position:
                              self.delayt[i+1]/60.0 + self.climb_time[i+1]/60.0
             self.utc[i+1] = self.utc[i]+self.legt[i+1]
             if not np.isfinite(self.utc[i+1]):
+                print self.utc
                 import pdb; pdb.set_trace()
             
         self.local = self.utc+self.UTC_conversion
@@ -240,7 +251,7 @@ class dict_position:
                 speed = -10.0
         elif self.platform=='c130':
             if climb:
-                speed = 10.0=0.001*(alt1+alt0)/2.0
+                speed = 10.0-0.001*(alt1+alt0)/2.0
             else:
                 speed = -10.0
         else:
@@ -257,7 +268,6 @@ class dict_position:
 	from datetime import datetime
 	dt = []
 	Y,M,D = [int(s) for s in self.datestr.split('-')]
-	print self.utc
 	for i,u in enumerate(self.utc):
             try:
                 hh = int(u)
@@ -453,6 +463,7 @@ class dict_position:
         self.endbearing = np.delete(self.endbearing,i)
         self.turn_deg = np.delete(self.turn_deg,i)
         self.turn_time = np.delete(self.turn_time,i)
+        self.climb_time = np.delete(self.climb_time,i)
         self.sza = np.delete(self.sza,i)
         self.azi = np.delete(self.azi,i)
         self.comments.pop(i)
@@ -465,7 +476,7 @@ class dict_position:
     def appends(self,lat,lon,sp=None,dt=None,alt=None,
                 clt=None,utc=None,loc=None,lt=None,d=None,cd=None,
                 dnm=None,cdnm=None,spkt=None,altk=None,
-                bear=0.0,endbear=0.0,turnd=0.0,turnt=0.0,
+                bear=0.0,endbear=0.0,turnd=0.0,turnt=0.0,climbt=0.0,
                 sza=None,azi=None,comm=None):
         """
         Program that appends to the current class with values supplied, or with defaults from the command line
@@ -494,6 +505,7 @@ class dict_position:
         self.endbearing = np.append(self.endbearing,endbear)
         self.turn_deg = np.append(self.turn_deg,turnd)
         self.turn_time = np.append(self.turn_time,turnt)
+        self.climb_time = np.append(self.climb_time,climbt)
         self.sza = np.append(self.sza,sza)
         self.azi = np.append(self.azi,azi)
         self.comments.append(comm)
@@ -589,7 +601,6 @@ class dict_position:
         self.name = Sheet(sheet_num).name
 	Sheet(sheet_num).activate()
 	print 'Activating sheet:%i, name:%s'%(sheet_num,Sheet(sheet_num).name)
-	wait = raw_input("PRESS ENTER TO CONTINUE.")
         self.datestr = str(Range('U1').value).split(' ')[0]
         if not self.datestr:
             print 'No datestring found! Using todays date'
@@ -805,6 +816,12 @@ class dict_position:
         microsec = int((secon-seconds)*100)
         return datetime(year,month,day,hour,minutes,seconds,microsec)
 
+    def exremove(self):
+        'Program to remove the current Sheet'
+        print 'Not yet'
+        pass
+        
+
 def populate_ex_arr(filename=None,colorcycle=['red','blue','green']):
     """
     Purpose:
@@ -826,7 +843,6 @@ def populate_ex_arr(filename=None,colorcycle=['red','blue','green']):
     wb = Workbook(filename)
     num = Sheet.count()
     for i in range(num):
-        print 'doing sheet_num:%i'%(i+1)
         arr.append(ex.dict_position(filename=filename,sheet_num=i+1,color=colorcycle[i]))
     return arr
 
