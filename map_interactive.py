@@ -587,10 +587,10 @@ def load_sat_from_net():
     Program to load the satllite track prediction from the internet
     Checks at the avdc website
     """
-    import time
+    from datetime import datetime,timedelta
     from urllib2 import urlopen
     from pykml import parser
-    today = time.strftime('%Y%m%d')
+    today = datetime.now().strftime('%Y%m%d')
     site = 'http://avdc.gsfc.nasa.gov/download_2.php?site=98675770&id=25&go=download&path=%2FSubsatellite%2Fkml&file=A-Train_subsatellite_prediction_'+today+'T000000Z.kml'
     print 'Satellite tracks url: %s' %site
     try:
@@ -599,9 +599,18 @@ def load_sat_from_net():
         r = response.read()
         kml = parser.fromstring(r)
     except:
-        import tkMessageBox
-        tkMessageBox.showerror('No sat','There was an error communicating with avdc.gsfc.nasa.gov')
-        return None
+        print 'Problem with day, trying previous day...'
+        try:
+            yesterday = (datetime.now()-timedelta(days=1)).strftime('%Y%m%d')
+            site = 'http://avdc.gsfc.nasa.gov/download_2.php?site=98675770&id=25&go=download&path=%2FSubsatellite%2Fkml&file=A-Train_subsatellite_prediction_'+yesterday+'T000000Z.kml'
+            response = urlopen(site)
+            print 'Getting the kml prediction file from avdc.gsfc.nasa.gov'
+            r = response.read()
+            kml = parser.fromstring(r)
+        except:
+            import tkMessageBox
+            tkMessageBox.showerror('No sat','There was an error communicating with avdc.gsfc.nasa.gov')
+            return None
     print 'Kml file read...'
     return kml
 
@@ -655,6 +664,6 @@ def plot_sat_tracks(m,sat):
         x,y = m(lon,lat)
         sat_obj.append(m.plot(x,y,'.',label=k))
     sat_obj.append(m.ax.legend(loc='lower right',bbox_to_anchor=(1.0,1.04)))
-    return lines_sat
+    return sat_obj
         
     

@@ -371,7 +371,7 @@ class gui:
     def refresh(self):
         'function to force a refresh of the plotting window'
         self.line.onfigureenter([1])
-        
+        self.line.get_bg()
     
     def make_gui(self):
         """
@@ -458,7 +458,7 @@ class gui:
             sat = get_sat_tracks(self.line.ex.datestr,kml)
             self.line.tb.set_message('Plotting satellite tracks') 
             self.sat_obj = plot_sat_tracks(self.line.m,sat)
-            self.line.get_bg()
+        self.line.get_bg()
 
     def gui_addbocachica(self):
         'GUI handler for adding bocachica foreacast maps to basemap plot'
