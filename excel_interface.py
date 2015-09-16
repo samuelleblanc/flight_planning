@@ -1,3 +1,6 @@
+# Excel Interface codes to be used in coordination with moving_lines flight planning software
+# Copyright 2015 Samuel LeBlanc
+
 import numpy as np
 from xlwings import Range
 import Pysolar.solar as sol

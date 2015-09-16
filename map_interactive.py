@@ -1,3 +1,6 @@
+# map_interactive software
+# to use in combination with moving_lines
+# Copyright 2015, Samuel LeBlanc
 from mpl_toolkits.basemap import Basemap
 import numpy as np
 import sys

@@ -27,6 +27,7 @@
         ...
     Modification History:
         Written: Samuel LeBlanc, 2015-08-07, Santa Cruz, CA
+                Copyright 2015 Samuel LeBlanc
         Modified: Samuel LeBlanc, 2015-09-02, NASA Ames, Santa Cruz, CA
                 - added new buttons
                 - changed imports to be more specific and not import everything

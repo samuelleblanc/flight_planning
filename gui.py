@@ -1,3 +1,5 @@
+# gui codes to use in coordination with moving_lines software
+# Copyright 2015 Samuel LeBlanc
 import tkSimpleDialog
 
 class gui:
