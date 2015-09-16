@@ -23,7 +23,15 @@
         ...
     Modification History:
         Written: Samuel LeBlanc, 2015-08-07, Santa Cruz, CA
-        Modified: 
+        Modified: Samuel LeBlanc, 2015-09-02, NASA Ames, Santa Cruz, CA
+                - added new buttons
+                - changed imports to be more specific and not import everything
+        Modified: Samuel LeBlanc, 2015-09-10, NASA Ames, Santa Cruz, CA
+                - added multi plane capabilities via radiobuttons in the gui interface
+        Modified: Samuel LeBlanc, 2015-09-16, NASA Ames
+                - added icon in main figure
+                - added move points buttons
+                - added basemap creation questions
 """
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
@@ -39,6 +47,27 @@ import map_interactive as mi
 import gui
 
 version = 'v0.7beta'
+
+def Get_basemap_profile():
+    'Program to load profile dict basemap values'
+    defaults = [{'Profile':'ORACLES','Plane_name':'P3',
+                 'Start_lon':'14 38.717E','Star_lat':'22 58.783S',
+                 'Lon_range':[-20,20],'Lat_range':[-30,10],
+                 'UTC_start':7.0,'UTC_conversion':+1.0,
+                 'start_alt':95.0},
+                {'Profile':'NAAMES','Plane_name':'C130',
+                 'Start_lon':'52 44.547W','Star_lat':'47 37.273N',
+                 'Lon_range':[-55,-20],'Lat_range':[40,60],
+                 'UTC_start':8.5,'UTC_conversion':-2.5,
+                 'start_alt':110.0},
+                {'Profile':'KORUS-AQ','Plane_name':'DC8',
+                 'Start_lon':'126 47.663E','Star_lat':'37 33.489N',
+                 'Lon_range':[120,135],'Lat_range':[20,40],
+                 'UTC_start':8.5,'UTC_conversion':+9,
+                 'start_alt':20.0}]
+    select = gui.Select_profile(defaults)
+    print select.profile
+    return select.profile
 
 def Create_gui(vertical=True):
     'Program to set up gui interaction with figure embedded'
@@ -187,8 +216,8 @@ def savetmp(ui,wb):
         print 'unable to save excel to temp file:'+tmpfilename
         print 'continuing ...'
 
-def init_plot(m,color='red'):
-    lat0,lon0 = mi.pll('22 58.783S'), mi.pll('14 38.717E')
+def init_plot(m,start_lon='14 38.717E',start_lat='22 58.783S',color='red'):
+    lat0,lon0 = mi.pll(start_lat), mi.pll(start_lon)
     x0,y0 = m(lon0,lat0)
     line, = m.plot([x0],[y0],'o-',color=color,linewidth=3)
     text = ('Press s to stop interaction\\n'
@@ -201,11 +230,16 @@ def stopandquit():
     ui.root.quit()
     ui.root.destroy()
 
-def Create_interaction(test=False,**kwargs):
+def Create_interaction(test=False,profile=None,**kwargs):
     ui = Create_gui()
     ui.tb.set_message('Creating basemap')
-    m = mi.build_basemap(ax=ui.ax1)
-    line = init_plot(m,color='red')
+    profile = Get_basemap_profile()
+    m = mi.build_basemap(ax=ui.ax1,profile=profile)
+    if profile:
+        sla,slo = profile['Start_lat'],profile['Start_lon']
+    else:
+        sla,slo = None,None
+    line = init_plot(m,start_lat=sla,start_lon=slo,color='red')
 
     flabels = 'labels.txt'
     faero = 'aeronet_locations.txt'
@@ -218,13 +252,14 @@ def Create_interaction(test=False,**kwargs):
         
     get_datestr(ui)
     ui.tb.set_message('making the Excel connection')
-    wb = ex.dict_position(datestr=ui.datestr,color=line.get_color(),**kwargs)
+    wb = ex.dict_position(datestr=ui.datestr,color=line.get_color(),profile=profile,**kwargs)
     ui.tb.set_message('Building the interactivity on the map')
-    lines = mi.LineBuilder(line,m=m,ex=wb,tb=ui.tb)
+    lines = mi.LineBuilder(line,m=m,ex=wb,tb=ui.tb,blit=True)
     ui.tb.set_message('Saving temporary excel file')
     savetmp(ui,wb)
     
     build_buttons(ui,lines)
+    lines.get_bg(redraw=True)
     ui.tb.set_message('Ready for interaction')
     def stopandquit():
         'simple function to handle the stop and quit'

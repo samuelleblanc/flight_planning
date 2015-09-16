@@ -349,6 +349,7 @@ class gui:
         self.line.line = self.line.line_arr[self.iactive.get()]
         self.line.ex.switchsheet(self.iactive.get())
         self.line.colorme(self.colors[self.iactive.get()])
+        self.line.get_bg()
         
     def gui_savefig(self):
         'gui program to save the current figure as png'
@@ -424,10 +425,13 @@ class gui:
             wp_arr.append('WP #%i'%w)
         p = Select_flights(wp_arr,title='Move points',Text='Select points to move:')
         m = Move_point()
+        self.line.moving = True
         for i,val in enumerate(p.result):
             if val:
-                self.line.movepoint(i,m.bear,m.dist)
-
+                self.line.movepoint(i,m.bear,m.dist,last=False)
+        self.line.movepoint(0,0,0,last=True)
+        self.line.moving = False
+        
     def gui_addsat(self):
         'Gui button to add the satellite tracks'
         from tkMessageBox import askquestion
@@ -454,6 +458,7 @@ class gui:
             sat = get_sat_tracks(self.line.ex.datestr,kml)
             self.line.tb.set_message('Plotting satellite tracks') 
             self.sat_obj = plot_sat_tracks(self.line.m,sat)
+            self.line.get_bg()
 
     def gui_addbocachica(self):
         'GUI handler for adding bocachica foreacast maps to basemap plot'
@@ -584,5 +589,168 @@ class Move_point(tkSimpleDialog.Dialog):
         except ValueError:
             import tkMessageBox
             tkMessageBox.showwarning('Bad input','Can not format values, try again')
+        return True
+
+class Select_profile(tkSimpleDialog.Dialog):
+    """
+    Purpose:
+        Dialog box that gets user input for what basemap profiles to load
+        Allows changing of the plotting area and starting location
+    Inputs:
+        tkSimple.Dialog
+        default_profiles: list of profile dict objects
+        title: title of dialog box (defaults to 'Enter map defaults'
+    Outputs:
+        Single profile
+    Dependencies:
+        tkSimpleDialog
+    MOdifications:
+        written: Samuel LeBlanc, 2015-09-15, NASA Ames, CA
+    """
+    def __init__(self,default_profiles,title='Enter map defaults'):
+        import Tkinter as tk
+        self.default_profiles = default_profiles
+        parent = tk._default_root
+        tkSimpleDialog.Dialog.__init__(self,parent,title)
+        
+    
+    def body(self,master):
+        import tkSimpleDialog
+        import Tkinter as tk
+        self.pname = tk.StringVar(master)
+        self.pname.set(self.default_profiles[0]['Profile'])
+        names = [pp['Profile'] for pp in self.default_profiles]
+        tk.Label(master, text='Default Profiles:').grid(row=0)
+        self.drop = tk.OptionMenu(master,self.pname,*names,command=self.set_profvalues)
+        self.drop.grid(row=0,column=1)
+        tk.Label(master, text='Options', font="-weight bold").grid(row=1)
+
+        tk.Label(master, text='Plane Name:').grid(row=2)
+        self.name = tk.Entry(master)
+        self.name.grid(row=2,column=1)
+
+        tk.Label(master, text='Start Lon:').grid(row=3)
+        self.start_lon = tk.Entry(master)
+        self.start_lon.grid(row=3,column=1)
+
+        tk.Label(master, text='Start Lat:').grid(row=4)
+        self.start_lat = tk.Entry(master)
+        self.start_lat.grid(row=4,column=1)
+
+        tk.Label(master, text='Longitude range:').grid(row=5)
+        self.lon0 = tk.Entry(master)
+        self.lon1 = tk.Entry(master)
+        self.lon0.grid(row=5,column=1)
+        self.lon1.grid(row=5,column=2)
+
+        tk.Label(master, text='Latitude range:').grid(row=6)
+        self.lat0 = tk.Entry(master)
+        self.lat1 = tk.Entry(master)
+        self.lat0.grid(row=6,column=1)
+        self.lat1.grid(row=6,column=2)
+
+        tk.Label(master, text='UTC Start:').grid(row=7)
+        self.start_utc = tk.Entry(master)
+        self.start_utc.grid(row=7,column=1)
+
+        tk.Label(master, text='UTC conversion:').grid(row=8)
+        self.utc_convert = tk.Entry(master)
+        self.utc_convert.grid(row=8,column=1)
+
+        tk.Label(master, text='Start Alt:').grid(row=9)
+        self.start_alt = tk.Entry(master)
+        self.start_alt.grid(row=9,column=1)
+
+        self.set_profvalues(names[0])
+        return self.drop
+
+    def set_profvalues(self,val):
+        'Simple program to load the default profile values in the different entry points'
+        for p in self.default_profiles:
+            if p['Profile']==self.pname.get():
+                self.set_val(self.name,p['Plane_name'])
+                self.set_val(self.start_lon,p['Start_lon'])
+                self.set_val(self.start_lat,p['Star_lat'])
+                self.set_val(self.lon0,p['Lon_range'][0])
+                self.set_val(self.lon1,p['Lon_range'][1])
+                self.set_val(self.lat0,p['Lat_range'][0])
+                self.set_val(self.lat1,p['Lat_range'][1])
+                self.set_val(self.start_utc,p['UTC_start'])
+                self.set_val(self.utc_convert,p['UTC_conversion'])
+                self.set_val(self.start_alt,p['start_alt'])
+
+    def set_val(self,e,val):
+        'Simple program to delete the value and replace with current value'
+        import Tkinter as tk
+        e.delete(0,tk.END)
+        e.insert(tk.END,val)
+    
+    def apply(self):
+        self.profile = {'Plane_name':self.name.get(),
+                        'Start_lon':self.start_lon.get(),
+                        'Start_lat':self.start_lat.get(),
+                        'Lon_range':[self.lon0.get(),self.lon1.get()],
+                        'Lat_range':[self.lat0.get(),self.lat1.get()],
+                        'UTC_start':float(self.start_utc.get()),
+                        'UTC_conversion':float(self.utc_convert.get()),
+                        'start_alt':float(self.start_alt.get())
+                        }
+        return self.profile
+
+    def check_input(self,s,isletter=False):
+        'method to check if there is a number or letter in the string'
+        if s:
+            import re
+            if isletter:
+                u = '\w'
+            else:
+                u = '\d'
+            if re.search(u,s):
+                return True
+            else:
+                return False
+        else:
+            return false
+
+    def validate(self):
+        import tkMessageBox
+        if not self.check_input(self.name.get(),1):
+            tkMessageBox.showwarning('Bad input','Plane name error, try again')
+            return False
+        if not self.check_input(self.start_lon.get(),0):
+            tkMessageBox.showwarning('Bad input','Start Lon error, try again')
+            return False
+        if not self.check_input(self.start_lat.get(),0):
+            tkMessageBox.showwarning('Bad input','Start Lat error, try again')
+            return False
+        if not self.check_input(self.lon0.get(),0):
+            tkMessageBox.showwarning('Bad input','Lon Range error, try again')
+            return False
+        if not self.check_input(self.lon1.get(),0):
+            tkMessageBox.showwarning('Bad input','Lon Range error, try again')
+            return False
+        if not self.check_input(self.start_utc.get(),0):
+            tkMessageBox.showwarning('Bad input','Start UTC error, try again')
+            return False
+        if not self.check_input(self.utc_convert.get(),0):
+            tkMessageBox.showwarning('Bad input','UTC Conversion error, try again')
+            return False
+        if not self.check_input(self.start_alt.get(),0):
+            tkMessageBox.showwarning('Bad input','Alt start error, try again')
+            return False
+        if not self.check_input(self.lat0.get(),0):
+            tkMessageBox.showwarning('Bad input','Lat Range error, try again')
+            return False
+        if not self.check_input(self.lat1.get(),0):
+            tkMessageBox.showwarning('Bad input','Lat Range error, try again')
+            return False
+        try:
+            us = float(self.start_utc.get())
+            uc = float(self.utc_convert.get())
+            sa = float(self.start_alt.get())
+        except ValueError:
+            import tkMessageBox
+            tkMessageBox.showwarning('Bad input','Can not format values, try again')
+            return False
         return True
             

@@ -62,6 +62,8 @@ class dict_position:
                 - added color keyword
         Modified: Samuel LeBlanc, 2015-09-10, NASA Ames, Santa Cruz, CA
 	        - added init codes for loading a single sheet of a workbook
+	Modified: Samuel LeBlanc, 2015-09-15, NASA Ames, CA
+                - added handling of the profile dict of lat lon and starting positions
     """
     import numpy as np
     from xlwings import Range,Sheet
@@ -75,7 +77,12 @@ class dict_position:
     def __init__(self,lon0='14 38.717E',lat0='22 58.783S',speed=150.0,UTC_start=7.0,
                  UTC_conversion=+1.0,alt0=0.0,
                  verbose=False,filename=None,datestr=None,
-                 newsheetonly=False,name='P3 Flight path',sheet_num=1,color='red'):
+                 newsheetonly=False,name='P3 Flight path',sheet_num=1,color='red',
+                 profile=None):
+
+        if profile:
+            lon0,lat0,UTC_start = profile['Start_lon'],profile['Start_lat'],profile['UTC_start']
+            UTC_conversion,alt0,name = profile['UTC_conversion'],profile['start_alt'],profile['Plane_name']
         self.comments = [' ']
         self.lon = np.array([pll(lon0)])
         self.lat = np.array([pll(lat0)])
@@ -217,6 +224,8 @@ class dict_position:
                 TAS = TAS -15.0
         else:
             TAS = 130.0
+        if not np.isfinite(TAS):
+            TAS = 130.0
         return TAS
 
     def calc_climb_time(self,alt0,alt1):
@@ -259,7 +268,11 @@ class dict_position:
                 speed = 5.0
             else:
                 speed = -5.0
-        return (alt1-alt0)/speed/60.0
+        climb_time = (alt1-alt0)/speed/60.0
+        if not np.isfinite(climb_time):
+            climb_time = 5.0
+            print 'climb time not finite for platform: %s, alt0:%f, alt1:%f' % (self.platform,alt0,alt1)
+        return climb_time
 
     def calcdatetime(self):
         """

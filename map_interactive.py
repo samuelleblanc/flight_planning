@@ -17,6 +17,7 @@ class LineBuilder:
         ex: excel_interface class
         verbose: (default False) writes out comments along the way
         tb: toolbar instance to use its interactions.
+        blit: (optional, default to True) if set, then uses the blit techinque to redraw
     Outputs:
         LineBuilder class 
     Dependencies:
@@ -32,11 +33,13 @@ class LineBuilder:
         Written: Samuel LeBlanc, 2015-08-07, Santa Cruz, CA
         Modified: Samuel LeBlanc, 2015-08-21, Santa Cruz, CA
                  - added new plotting with range circles
-        Modified: Samuel LeBlanc, 2015-09-15, NASA Ames, Santa Cruz, CA
+        Modified: Samuel LeBlanc, 2015-09-14, NASA Ames, Santa Cruz, CA
                  - added new points, move points from dialog windows
                  - bug fixes
+        Modified: Samuel LeBlanc, 2015-09-15, NASA Ames, CA
+                 - added handling of blit draw techinque to get gains in speed when drawing
     """
-    def __init__(self, line,m=None,ex=None,verbose=False,tb=None):
+    def __init__(self, line,m=None,ex=None,verbose=False,tb=None, blit=True):
         """
         Start the line builder, with line2d object as input,
         and opitonally the m from basemap object,
@@ -62,8 +65,11 @@ class LineBuilder:
         self.contains = False
         self.labelsoff = False
         self.circlesoff = False
+        self.moving = False
         self.lbl = None
         self.verbose = verbose
+        self.blit = blit
+        self.get_bg()
         if not tb:
          #   import matplotlib.pyplot as plt
          #   self.tb = plt.get_current_fig_manager().toolbar
@@ -102,6 +108,7 @@ class LineBuilder:
         #print 'click', event
         if event.inaxes!=self.line.axes: return
         if self.tb.mode!='': return
+        if self.moving: return
         self.contains, attrd = self.line.contains(event)
         if self.contains:
             if self.verbose:
@@ -117,6 +124,7 @@ class LineBuilder:
                 self.line.axes.autoscale(enable=False)
                 self.highlight_linepoint, = self.line.axes.plot(self.xs[self.contains_index],
                                                             self.ys[self.contains_index],'bo')
+                self.draw_canvas(extra_points=[self.highlight_linepoint])
             else:
                 self.line.axes.format_coord = self.format_position_simple
                 self.xy = self.xs[-1],self.ys[-1]
@@ -140,7 +148,7 @@ class LineBuilder:
             ilola = -2
         self.line.set_data(self.xs, self.ys)
         self.line.range_circles,self.line.range_cir_anno = self.plt_range_circles(self.lons[ilola],self.lats[ilola])
-        self.line.figure.canvas.draw()
+        self.draw_canvas(extra_points=[self.line.range_circles,self.line.range_cir_anno])
         self.press = event.xdata,event.ydata
         if self.verbose:
             sys.stdout.write('moving:')
@@ -151,6 +159,7 @@ class LineBuilder:
         
         if self.verbose:
             print 'release'#,event
+        if self.moving: return
 
         if (self.tb.mode == 'zoom rect') | (self.tb.mode == 'pan/zoom') | (self.tb.mode!=''):
             ylim = self.line.axes.get_ylim()
@@ -170,6 +179,7 @@ class LineBuilder:
             mi.update_pars_mers(self.m,mer,par)
 ### Need to update
             self.line.figure.canvas.draw()
+            self.get_bg()
             return
         elif self.tb.mode!='':
             return
@@ -210,6 +220,7 @@ class LineBuilder:
         if event.inaxes!=self.line.axes: return
         if self.press is None: return
         if self.tb.mode!='': return
+        if self.moving: return
         if self.verbose:
             sys.stdout.write("\r"+" moving: x=%2.5f, y=%2.5f" %(event.xdata,event.ydata))
             sys.stdout.flush()
@@ -223,7 +234,10 @@ class LineBuilder:
         if self.m:
             self.lons[i],self.lats[i] = self.m(event.xdata,event.ydata,inverse=True)
         self.line.set_data(list(self.xs),list(self.ys))
-        self.line.figure.canvas.draw()
+        if self.contains:
+            self.draw_canvas(extra_points=[self.highlight_linepoint,self.line.range_circles,self.line.range_cir_anno])
+        else:
+            self.draw_canvas(extra_points=[self.line.range_circles,self.line.range_cir_anno])       
 
     def onkeypress(self,event):
         'function to handle keyboard events'
@@ -247,6 +261,7 @@ class LineBuilder:
 
     def onfigureenter(self,event):
         'event handler for updating the figure with excel data'
+        if self.moving: return
         self.tb.set_message('Recalculating ...')
         if self.verbose:
             print 'entered figure'#, event
@@ -260,7 +275,7 @@ class LineBuilder:
                 self.xs = list(x)
                 self.ys = list(y)
                 self.line.set_data(self.xs,self.ys)
-                self.line.figure.canvas.draw()
+                self.draw_canvas()
         self.update_labels()
         self.tb.set_message('Done Recalculating')
         self.line.axes.format_coord = self.format_position_simple
@@ -337,6 +352,8 @@ class LineBuilder:
     def makegrey(self):
         'Program to grey out the entire path'
         self.line.set_color('#AAAAAA')
+        self.line.figure.canvas.draw()
+        self.get_bg()
         
     def colorme(self,c):
         'Program to color the entire path'
@@ -369,6 +386,7 @@ class LineBuilder:
 	else:
 	    u = self.m.imshow(img[ix,:,:][:,iy,:],clip_on=False,**kwargs)
 	self.line.figure.canvas.draw()
+	self.get_bg()
 
     def newpoint(self,bearing,distance):
         'program to add a new point at the end of the current track with a bearing and distance'
@@ -389,9 +407,9 @@ class LineBuilder:
             self.ex.calculate()
             self.ex.write_to_excel()
         self.update_labels()
-        self.line.figure.canvas.draw()
+        self.draw_canvas()
 
-    def movepoint(self,i,bearing,distance):
+    def movepoint(self,i,bearing,distance,last=False):
         'Program to move a point a certain distance and bearing'
         newlon,newlat,baz = shoot(self.lons[i],self.lats[i],bearing,maxdist=distance)
         if self.m:
@@ -403,21 +421,52 @@ class LineBuilder:
         self.xs[i] = x
         self.ys[i] = y
         self.line.set_data(self.xs, self.ys)
-        if self.ex:
-            self.ex.mods(i,self.lats[i],self.lons[i])
-            self.ex.calculate()
-            self.ex.write_to_excel()
-        self.update_labels()
-        self.line.figure.canvas.draw()
+        if self.ex: self.ex.mods(i,self.lats[i],self.lons[i])
+        if last:
+            if self.ex:
+                self.ex.calculate()
+                self.ex.write_to_excel()
+            self.update_labels()
+            self.draw_canvas()
 
+    def get_bg(self,redraw=False):
+        'program to store the canvas background. Used for blit technique'
+        if redraw:
+            self.line.figure.canvas.draw()
+        self.bg = self.line.figure.canvas.copy_from_bbox(self.line.axes.bbox)
+
+    def draw_canvas(self,extra_points=[]):
+        'Program to handle the blit technique or simply a redraw of the canvas'
+        if self.blit:
+            self.line.figure.canvas.restore_region(self.bg)
+            self.line.axes.draw_artist(self.line)
+            try:
+                for p in extra_points:
+                    if type(p) is list:
+                        for px in p:
+                           self.line.axes.draw_artist(px) 
+                    else:
+                        self.line.axes.draw_artist(p)
+            except Exception as ie:
+                print 'exception occurred: %s' %ie
+            self.line.figure.canvas.blit(self.line.axes.bbox)
+        else:
+            self.line.figure.canvas.draw()
         
-def build_basemap(lower_left=[-20,-30],upper_right=[20,10],ax=None,proj='cyl'):
+def build_basemap(lower_left=[-20,-30],upper_right=[20,10],ax=None,proj='cyl',profile=None):
     """
     First try at a building of the basemap with a 'stere' projection
     Must put in the values of the lower left corner and upper right corner (lon and lat)
     
     Defaults to draw 8 meridians and parallels
+
+    Modified: Samuel LeBlanc, 2015-09-15, NASA Ames
+            - added profile keyword that contains the basemap profile dict for plotting the corners
     """
+    from map_interactive import pll
+    if profile:
+        upper_right = [pll(profile['Lon_range'][1]),pll(profile['Lat_range'][1])]
+        lower_left = [pll(profile['Lon_range'][0]),pll(profile['Lat_range'][0])]
     m = Basemap(projection=proj,lon_0=(upper_right[0]+lower_left[0]),lat_0=(upper_right[1]+lower_left[1]),
             llcrnrlon=lower_left[0], llcrnrlat=lower_left[1],
             urcrnrlon=upper_right[0], urcrnrlat=upper_right[1],resolution='h',ax=ax)
@@ -536,15 +585,16 @@ def load_sat_from_net():
     from pykml import parser
     today = time.strftime('%Y%m%d')
     site = 'http://avdc.gsfc.nasa.gov/download_2.php?site=98675770&id=25&go=download&path=%2FSubsatellite%2Fkml&file=A-Train_subsatellite_prediction_'+today+'T000000Z.kml'
+    print 'Satellite tracks url: %s' %site
     try:
         response = urlopen(site)
         print 'Getting the kml prediction file from avdc.gsfc.nasa.gov'
         r = response.read()
+        kml = parser.fromstring(r)
     except:
         import tkMessageBox
         tkMessageBox.showerror('No sat','There was an error communicating with avdc.gsfc.nasa.gov')
         return None
-    kml = parser.fromstring(r)
     print 'Kml file read...'
     return kml
 
@@ -588,7 +638,7 @@ def get_sat_tracks(datestr,kml):
             print 'Skipping %s; no points downloaded' %name
     return sat
 
-def plot_sat_tracks(m,sat):
+def plot_sat_tracks(m,sat): 
     """
     Program that goes through and plots the satellite tracks
     """
