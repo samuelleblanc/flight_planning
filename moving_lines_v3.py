@@ -1,6 +1,9 @@
 """
     Purpose:
-        create interaction via plotting lines and clickable map
+        Main program set to create a flight planning software
+        Is used as a basis of the interface between an excel spreadsheet
+            and a clickable map
+        It is to create flight lines saved to kml, txt, xls, and others.
     Inputs: 
         test: if set to true, then command line is still useable
     Outputs:
@@ -15,6 +18,7 @@
         map_interactive
         gui
         Basemap
+        PIL (through scipy.misc.imread)
     Required files:
         labels.txt: file with labels of locations
         aeronet_locations.txt: file with location of aeronet sites
@@ -40,7 +44,8 @@ import Tkinter as tk
 import numpy as np
 from mpl_toolkits.basemap import Basemap
 import datetime
-import scipy.misc 
+import scipy.misc
+import PIL
 
 import map_utils as mu
 import excel_interface as ex
