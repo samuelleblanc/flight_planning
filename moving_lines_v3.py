@@ -66,7 +66,6 @@ def Get_basemap_profile():
                  'UTC_start':8.5,'UTC_conversion':+9,
                  'start_alt':20.0}]
     select = gui.Select_profile(defaults)
-    print select.profile
     return select.profile
 
 def Create_gui(vertical=True):
@@ -273,5 +272,5 @@ def Create_interaction(test=False,profile=None,**kwargs):
     return lines,ui
 
 if __name__ == "__main__":
-    lines,ui = Create_interaction(test=True)
+    lines,ui = Create_interaction(test=False)
 

@@ -168,16 +168,17 @@ class LineBuilder:
             self.m.llcrnrlat = ylim[0]
             self.m.urcrnrlon = xlim[1]
             self.m.urcrnrlat = ylim[1]
+            round_to_2 = lambda x:(int(x/2)+1)*2
+            round_to_5 = lambda x:(int(x/5)+1)*5
             if (xlim[1]-xlim[0])<20.0:
-                mer = np.linspace(-14,20,18).astype(int)
+                mer = np.arange(round_to_2(xlim[0]),round_to_2(xlim[1])+2,2)
             else:
-                mer = np.linspace(-15,20,8).astype(int)
+                mer = np.arange(round_to_5(xlim[0]),round_to_5(xlim[1])+5,5)
             if (ylim[1]-ylim[0])<20.0:
-                par = np.linspace(-24,4,15).astype(int)
+                par = np.arange(round_to_2(ylim[0]),round_to_2(ylim[1])+2,2)
             else:
-                par = np.linspace(-25,5,7).astype(int)
+                par = np.arange(round_to_5(ylim[0]),round_to_5(ylim[1])+5,5)
             mi.update_pars_mers(self.m,mer,par)
-### Need to update
             self.line.figure.canvas.draw()
             self.get_bg()
             return
@@ -462,12 +463,15 @@ def build_basemap(lower_left=[-20,-30],upper_right=[20,10],ax=None,proj='cyl',pr
 
     Modified: Samuel LeBlanc, 2015-09-15, NASA Ames
             - added profile keyword that contains the basemap profile dict for plotting the corners
+            - added programatic determination of basemap parallels and meridians
     """
     from map_interactive import pll
     if profile:
         upper_right = [pll(profile['Lon_range'][1]),pll(profile['Lat_range'][1])]
         lower_left = [pll(profile['Lon_range'][0]),pll(profile['Lat_range'][0])]
-    m = Basemap(projection=proj,lon_0=(upper_right[0]+lower_left[0]),lat_0=(upper_right[1]+lower_left[1]),
+        
+        
+    m = Basemap(projection=proj,lon_0=(upper_right[0]+lower_left[0])/2.0,lat_0=(upper_right[1]+lower_left[1])/2.0,
             llcrnrlon=lower_left[0], llcrnrlat=lower_left[1],
             urcrnrlon=upper_right[0], urcrnrlat=upper_right[1],resolution='h',ax=ax)
     m.artists = []
@@ -475,9 +479,12 @@ def build_basemap(lower_left=[-20,-30],upper_right=[20,10],ax=None,proj='cyl',pr
     #m.fillcontinents(color='#AAAAAA')
     m.drawstates()
     m.drawcountries()
-    mer = np.linspace(-15,20,8).astype(int)
+    round_to_5 = lambda x:(int(x/5)+1)*5 
+    mer = np.arange(round_to_5(lower_left[0]),round_to_5(upper_right[0])+5,5)
+    par = np.arange(round_to_5(lower_left[1]),round_to_5(upper_right[1])+5,5)
+    #mer = np.linspace(-15,20,8).astype(int)
     #mer = np.linspace(lower_left[0],upper_right[0],8).astype(int)
-    par = np.linspace(-25,5,7).astype(int)
+    #par = np.linspace(-25,5,7).astype(int)
     #par = np.linspace(lower_left[1],upper_right[1],8).astype(int)
     m.artists.append(m.drawmeridians(mer,labels=[0,0,0,1]))
     m.artists.append(m.drawparallels(par,labels=[1,0,0,0]))

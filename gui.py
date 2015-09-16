@@ -610,6 +610,7 @@ class Select_profile(tkSimpleDialog.Dialog):
     def __init__(self,default_profiles,title='Enter map defaults'):
         import Tkinter as tk
         self.default_profiles = default_profiles
+        self.profile = self.default_profiles[0]
         parent = tk._default_root
         tkSimpleDialog.Dialog.__init__(self,parent,title)
         
@@ -622,44 +623,44 @@ class Select_profile(tkSimpleDialog.Dialog):
         names = [pp['Profile'] for pp in self.default_profiles]
         tk.Label(master, text='Default Profiles:').grid(row=0)
         self.drop = tk.OptionMenu(master,self.pname,*names,command=self.set_profvalues)
-        self.drop.grid(row=0,column=1)
-        tk.Label(master, text='Options', font="-weight bold").grid(row=1)
+        self.drop.grid(row=0,column=1,columnspan=2)
+        tk.Label(master, text='Options', font="-weight bold").grid(row=1,columnspan=3)
 
-        tk.Label(master, text='Plane Name:').grid(row=2)
+        tk.Label(master, text='Plane Name:').grid(row=2,sticky=tk.E)
         self.name = tk.Entry(master)
-        self.name.grid(row=2,column=1)
+        self.name.grid(row=2,column=1,columnspan=2)
 
-        tk.Label(master, text='Start Lon:').grid(row=3)
+        tk.Label(master, text='Start Lon:').grid(row=3,sticky=tk.E)
         self.start_lon = tk.Entry(master)
-        self.start_lon.grid(row=3,column=1)
+        self.start_lon.grid(row=3,column=1,columnspan=2)
 
-        tk.Label(master, text='Start Lat:').grid(row=4)
+        tk.Label(master, text='Start Lat:').grid(row=4,sticky=tk.E)
         self.start_lat = tk.Entry(master)
-        self.start_lat.grid(row=4,column=1)
+        self.start_lat.grid(row=4,column=1,columnspan=2)
 
-        tk.Label(master, text='Longitude range:').grid(row=5)
-        self.lon0 = tk.Entry(master)
-        self.lon1 = tk.Entry(master)
+        tk.Label(master, text='Longitude range:').grid(row=5,sticky=tk.E)
+        self.lon0 = tk.Entry(master,width=10)
+        self.lon1 = tk.Entry(master,width=10)
         self.lon0.grid(row=5,column=1)
         self.lon1.grid(row=5,column=2)
 
-        tk.Label(master, text='Latitude range:').grid(row=6)
-        self.lat0 = tk.Entry(master)
-        self.lat1 = tk.Entry(master)
+        tk.Label(master, text='Latitude range:').grid(row=6,sticky=tk.E)
+        self.lat0 = tk.Entry(master,width=10)
+        self.lat1 = tk.Entry(master,width=10)
         self.lat0.grid(row=6,column=1)
         self.lat1.grid(row=6,column=2)
 
-        tk.Label(master, text='UTC Start:').grid(row=7)
+        tk.Label(master, text='UTC Start:').grid(row=7,sticky=tk.E)
         self.start_utc = tk.Entry(master)
-        self.start_utc.grid(row=7,column=1)
+        self.start_utc.grid(row=7,column=1,columnspan=2)
 
-        tk.Label(master, text='UTC conversion:').grid(row=8)
+        tk.Label(master, text='UTC conversion:').grid(row=8,sticky=tk.E)
         self.utc_convert = tk.Entry(master)
-        self.utc_convert.grid(row=8,column=1)
+        self.utc_convert.grid(row=8,column=1,columnspan=2)
 
-        tk.Label(master, text='Start Alt:').grid(row=9)
+        tk.Label(master, text='Start Alt:').grid(row=9,sticky=tk.E)
         self.start_alt = tk.Entry(master)
-        self.start_alt.grid(row=9,column=1)
+        self.start_alt.grid(row=9,column=1,columnspan=2)
 
         self.set_profvalues(names[0])
         return self.drop
