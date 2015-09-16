@@ -26,6 +26,7 @@ class dict_position:
         datestr: (optional) The flight day in format YYYY-MM-DD, if not set, default to today in utc.
         color: (optional) the color of the flight path defaults to red.
         sheet_num: (optional, defaults to 1) the sheet number to switch to
+        profile: (optional) if set, uses a dict of basemap profile to set for the initial lat lons, alt, utc_start, utc_conversion, name
     Outputs:
         dict_position class 
     Dependencies:
@@ -39,6 +40,7 @@ class dict_position:
         tempfile
         os
         datetime
+        Pysolar
     Required files:
         none
     Example:
@@ -132,6 +134,7 @@ class dict_position:
             self.calculate()
             self.write_to_excel()
 	    self.sheet_num = sheet_num
+	    
     def check_platform(self,name):
         'Simple program that check the name of the flight path to platforms names'
         if any(p in name for p in ['p3','P3','P-3','p-3','p 3','P 3']): platform = 'p3'
@@ -838,7 +841,7 @@ class dict_position:
 def populate_ex_arr(filename=None,colorcycle=['red','blue','green']):
     """
     Purpose:
-        Program that opens an excel file, andruns through the sheets 
+        Program that opens an excel file, and runs through the sheets 
         creates an array of dict_position
     Input:
         filename of excel file

@@ -10,9 +10,10 @@ from map_utils import spherical_dist,equi,shoot
 class LineBuilder:
     """
     Purpose:
-        create interaction via plotting lines and clickable map
+        The main interaction between a basemap plot and the functions to create clickable links
+        Includes any method to actually plot lines/annotations/figures on the map
     Inputs: (at init)
-        line from a single plot
+        line class from a single plot
         m: basemap base class
         ex: excel_interface class
         verbose: (default False) writes out comments along the way
@@ -25,8 +26,9 @@ class LineBuilder:
         map_utils
         sys
         Basemap
+        copy
     Required files:
-        none
+        kml files for sat tracks
     Example:
         ...
     Modification History:
@@ -524,6 +526,8 @@ def pll(string):
     """
     if type(string) is float:
         return string
+    if type(string) is int:
+        return float(string)
     n = len(string.split())
     str_ls = string.split()
     char_neg = re.findall("[SWsw]+",str_ls[-1])

@@ -3,18 +3,22 @@ import tkSimpleDialog
 class gui:
     """
     Purpose:
-        Class that contains simple gui interactions
+        Class that contains gui interactions
         makes a few buttons and compiles the functions used when buttons are clicked
+        Some actual calculations are made here such as loading of files
     Inputs:
         line object from linebuilder, with connected excel_interface
     outputs:
         none, only gui and its object
+        Modifies the tkinter Basemap window via calls to plotting
     Dependencies:
         Tkinter
         excel_interface
         os.path
         matplotlib
         tkFileDialog
+        tkSimpleDialog
+        tkMessageBox
     Example:
         ...
     History:
@@ -24,6 +28,11 @@ class gui:
 		  - modified imports to be more specific
         Modified: Samuel LeBlanc, 2015-09-10, Santa Cruz, CA
 	          - adding new flight path for another plane capabilities
+	Modified: Samuel LeBlanc, 2015-09-15, NASA Ames
+                  - added tkinter dialog classes fopr special gui interactions
+                      -initial profile setting of Basemap
+                      -select flights/points
+                      -move points
     """
     def __init__(self,line=None,root=None,noplt=False):
         import Tkinter as tk
@@ -671,7 +680,7 @@ class Select_profile(tkSimpleDialog.Dialog):
             if p['Profile']==self.pname.get():
                 self.set_val(self.name,p['Plane_name'])
                 self.set_val(self.start_lon,p['Start_lon'])
-                self.set_val(self.start_lat,p['Star_lat'])
+                self.set_val(self.start_lat,p['Start_lat'])
                 self.set_val(self.lon0,p['Lon_range'][0])
                 self.set_val(self.lon1,p['Lon_range'][1])
                 self.set_val(self.lat0,p['Lat_range'][0])

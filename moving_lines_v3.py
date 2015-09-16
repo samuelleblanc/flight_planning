@@ -40,6 +40,7 @@ import Tkinter as tk
 import numpy as np
 from mpl_toolkits.basemap import Basemap
 import datetime
+import scipy.misc 
 
 import map_utils as mu
 import excel_interface as ex
@@ -51,17 +52,17 @@ version = 'v0.7beta'
 def Get_basemap_profile():
     'Program to load profile dict basemap values'
     defaults = [{'Profile':'ORACLES','Plane_name':'P3',
-                 'Start_lon':'14 38.717E','Star_lat':'22 58.783S',
+                 'Start_lon':'14 38.717E','Start_lat':'22 58.783S',
                  'Lon_range':[-20,20],'Lat_range':[-30,10],
                  'UTC_start':7.0,'UTC_conversion':+1.0,
                  'start_alt':95.0},
                 {'Profile':'NAAMES','Plane_name':'C130',
-                 'Start_lon':'52 44.547W','Star_lat':'47 37.273N',
+                 'Start_lon':'52 44.547W','Start_lat':'47 37.273N',
                  'Lon_range':[-55,-20],'Lat_range':[40,60],
                  'UTC_start':8.5,'UTC_conversion':-2.5,
                  'start_alt':110.0},
                 {'Profile':'KORUS-AQ','Plane_name':'DC8',
-                 'Start_lon':'126 47.663E','Star_lat':'37 33.489N',
+                 'Start_lon':'126 47.663E','Start_lat':'37 33.489N',
                  'Lon_range':[120,135],'Lat_range':[20,40],
                  'UTC_start':8.5,'UTC_conversion':+9,
                  'start_alt':20.0}]
