@@ -71,7 +71,12 @@ def Get_basemap_profile():
                  'Start_lon':'126 47.663E','Start_lat':'37 33.489N',
                  'Lon_range':[120,135],'Lat_range':[20,40],
                  'UTC_start':8.5,'UTC_conversion':+9,
-                 'start_alt':20.0}]
+                 'start_alt':20.0},
+                {'Profile':'AJAX','Plane_name':'Alpha-jet',
+                 'Start_lon':'122 3.489W','Start_lat':'37 24.387N',
+                 'Lon_range':[-125,-115],'Lat_range':[30,40],
+                 'UTC_start':20.0,'UTC_conversion':+7,
+                 'start_alt':95.0}]
     select = gui.Select_profile(defaults)
     return select.profile
 

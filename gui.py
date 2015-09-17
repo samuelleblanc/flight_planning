@@ -474,45 +474,47 @@ class gui:
     def gui_addbocachica(self):
         'GUI handler for adding bocachica foreacast maps to basemap plot'
 	import tkMessageBox
-	from scipy.misc import imread
-	#tkMessageBox.showwarning('Sorry','Feature not yet implemented')
-	#return
-	filename = self.gui_file_select(ext='.png',ftype=[('All files','*.*'),
-                                                          ('PNG','*.png')])
-        if not filename:
-            print 'Cancelled, no file selected'
+	try:
+            from scipy.misc import imread
+            filename = self.gui_file_select(ext='.png',ftype=[('All files','*.*'),
+                        				  ('PNG','*.png')])
+	    if not filename:
+		print 'Cancelled, no file selected'
+		return
+            print 'Opening png File:'+filename
+            img = imread(filename)
+	except:
+            tkMessageBox.showwarning('Sorry','Loading image file from Bocachica not working...')
             return
-        print 'Opening png File:'+filename
-	img = imread(filename)
-        ll_lat,ll_lon,ur_lat,ur_lon = -40.0,-30.0,10.0,40.0
-        self.line.addfigure_under(img[42:674,50:1015,:],ll_lat,ll_lon,ur_lat,ur_lon)
+	ll_lat,ll_lon,ur_lat,ur_lon = -40.0,-30.0,10.0,40.0
+	self.line.addfigure_under(img[42:674,50:1015,:],ll_lat,ll_lon,ur_lat,ur_lon)
 	#self.line.addfigure_under(img[710:795,35:535,:],ll_lat-7.0,ll_lon,ll_lat-5.0,ur_lon-10.0,outside=True)
-
 
     def gui_addfigure(self,ll_lat=None,ll_lon=None,ur_lat=None,ur_lon=None):
         'GUI handler for adding figures forecast maps to basemap plot'
-        from scipy.misc import imread
-	import PIL
-        import tkMessageBox, tkSimpleDialog
-        #tkMessageBox.showwarning('Sorry','Feature in beta')
-        #return
-        filename = self.gui_file_select(ext='.png',ftype=[('All files','*.*'),
+        import tkSimpleDialog
+        try:
+            from scipy.misc import imread
+            import PIL
+            filename = self.gui_file_select(ext='.png',ftype=[('All files','*.*'),
                                                           ('PNG','*.png'),
 							  ('JPEG','*.jpg'),
 							  ('GIF','*.gif')])
-        if not filename:
-            print 'Cancelled, no file selected'
+            if not filename:
+                print 'Cancelled, no file selected'
+                return
+            print 'Opening png File: %s' %filename
+            img = imread(filename)
+        except:
+            import tkMessageBox
+            tkMessageBox.showwarning('Sorry','Error occurred unable to load file')
             return
-        print 'Opening png File: %s' %filename
-	img = imread(filename)
-	
 	# get the corners
 	if not ll_lat:
 	    ll_lat = tkSimpleDialog.askfloat('Lower left lat','Lower left lat? [deg]')
 	    ll_lon = tkSimpleDialog.askfloat('Lower left lon','Lower left lon? [deg]')
 	    ur_lat = tkSimpleDialog.askfloat('Upper right lat','Upper right lat? [deg]')
 	    ur_lon = tkSimpleDialog.askfloat('Upper right lon','Upper right lon? [deg]')
-
 	self.line.addfigure_under(img,ll_lat,ll_lon,ur_lat,ur_lon,alpha=0.6)
 
 class Select_flights(tkSimpleDialog.Dialog):
