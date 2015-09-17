@@ -19,6 +19,7 @@
         gui
         Basemap
         PIL (through scipy.misc.imread)
+        OWSLib
     Required files:
         labels.txt: file with labels of locations
         aeronet_locations.txt: file with location of aeronet sites
@@ -37,6 +38,7 @@
                 - added icon in main figure
                 - added move points buttons
                 - added basemap creation questions
+                - added GEOS imagerys with WMS service
 """
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
@@ -57,29 +59,58 @@ version = 'v0.7beta'
 
 def Get_basemap_profile():
     'Program to load profile dict basemap values'
-    defaults = [{'Profile':'ORACLES','Plane_name':'P3',
-                 'Start_lon':'14 38.717E','Start_lat':'22 58.783S',
-                 'Lon_range':[-20,20],'Lat_range':[-30,10],
-                 'UTC_start':7.0,'UTC_conversion':+1.0,
-                 'start_alt':95.0},
-                {'Profile':'NAAMES','Plane_name':'C130',
-                 'Start_lon':'52 44.547W','Start_lat':'47 37.273N',
-                 'Lon_range':[-55,-20],'Lat_range':[40,60],
-                 'UTC_start':8.5,'UTC_conversion':-2.5,
-                 'start_alt':110.0},
-                {'Profile':'KORUS-AQ','Plane_name':'DC8',
-                 'Start_lon':'126 47.663E','Start_lat':'37 33.489N',
-                 'Lon_range':[120,135],'Lat_range':[20,40],
-                 'UTC_start':8.5,'UTC_conversion':+9,
-                 'start_alt':20.0},
-                {'Profile':'AJAX','Plane_name':'Alpha-jet',
-                 'Start_lon':'122 3.489W','Start_lat':'37 24.387N',
-                 'Lon_range':[-125,-115],'Lat_range':[30,40],
-                 'UTC_start':20.0,'UTC_conversion':+7,
-                 'start_alt':95.0}]
+    filename = 'profiles.txt'
+    defaults = Get_default_profile(filename)
     select = gui.Select_profile(defaults)
     return select.profile
 
+def Get_default_profile(filename):
+    """
+    Program to try and read a text file with the default profiles
+    If unavailable use some hardcoded defaults
+    """
+    profile = []
+    try:
+        f = open(filename,'r')
+        dd = None
+        for line in f:
+            if not dd:
+                first = True
+                dd = line
+            else:
+                first = False
+            if ('{' in dd) & ('}' in dd):
+                profile.append(eval(dd.strip()))
+                dd = line.strip()
+            else:
+                if first: 
+                    dd = line.strip()
+                else:
+                    dd = ''.join((dd.strip(),line.strip()))
+        profile.append(eval(dd.strip()))
+    except:
+        profile = [{'Profile':'ORACLES','Plane_name':'P3',
+                     'Start_lon':'14 38.717E','Start_lat':'22 58.783S',
+                     'Lon_range':[-20,20],'Lat_range':[-30,10],
+                     'UTC_start':7.0,'UTC_conversion':+1.0,
+                     'start_alt':95.0},
+                    {'Profile':'NAAMES','Plane_name':'C130',
+                     'Start_lon':'52 44.547W','Start_lat':'47 37.273N',
+                     'Lon_range':[-55,-20],'Lat_range':[40,60],
+                     'UTC_start':8.5,'UTC_conversion':-2.5,
+                     'start_alt':110.0},
+                    {'Profile':'KORUS-AQ','Plane_name':'DC8',
+                     'Start_lon':'126 47.663E','Start_lat':'37 33.489N',
+                     'Lon_range':[120,135],'Lat_range':[20,40],
+                     'UTC_start':8.5,'UTC_conversion':+9,
+                     'start_alt':20.0},
+                    {'Profile':'AJAX','Plane_name':'Alpha-jet',
+                     'Start_lon':'122 3.489W','Start_lat':'37 24.387N',
+                     'Lon_range':[-125,-115],'Lat_range':[30,40],
+                     'UTC_start':20.0,'UTC_conversion':+7,
+                     'start_alt':95.0}]
+    return profile
+        
 def Create_gui(vertical=True):
     'Program to set up gui interaction with figure embedded'
     class ui:
@@ -197,6 +228,9 @@ def build_buttons(ui,lines,vertical=True):
     g.baddfigure = tk.Button(g.root,text='Add Forecast\nfrom image',
                          command = g.gui_addfigure)
     g.baddfigure.pack(in_=ui.top)
+    #g.baddgeos = tk.Button(g.root,text='Add GEOS',
+    #                     command = g.gui_addgeos)
+    #g.baddgeos.pack(in_=ui.top)
     tk.Frame(g.root,height=h,width=w,bg='black',relief='sunken'
              ).pack(in_=ui.top,side=side,padx=8,pady=5)
     tk.Button(g.root,text='Quit',command=g.stopandquit,bg='lightcoral'

@@ -390,7 +390,7 @@ class LineBuilder:
 	    #self.m.imshow(img,zorder=0,extent=[left,right,top,bottom],**kwargs)
 	    self.m.figure_under = self.m.imshow(img[ix,:,:][:,iy,:],zorder=0,alpha=0.5,**kwargs)
 	else:
-	    u = self.m.imshow(img[ix,:,:][:,iy,:],clip_on=False,**kwargs)
+	    u = self.m.imshow(img,clip_on=False,**kwargs)
 	self.line.figure.canvas.draw()
 	self.get_bg()
 

@@ -21,6 +21,7 @@ class gui:
         tkFileDialog
         tkSimpleDialog
         tkMessageBox
+        OWSLib
     Example:
         ...
     History:
@@ -35,6 +36,7 @@ class gui:
                       -initial profile setting of Basemap
                       -select flights/points
                       -move points
+                  - added GEOS figure adding with WMS service
     """
     def __init__(self,line=None,root=None,noplt=False):
         import Tkinter as tk
@@ -517,6 +519,62 @@ class gui:
 	    ur_lon = tkSimpleDialog.askfloat('Upper right lon','Upper right lon? [deg]')
 	self.line.addfigure_under(img,ll_lat,ll_lon,ur_lat,ur_lon,alpha=0.6)
 
+    def gui_addgeos(self,website='http://wms.gsfc.nasa.gov/cgi-bin/wms.cgi?project=GEOS.fp.fcst.inst1_2d_hwl_Nx'):
+        'GUI handler for adding the figures from WMS support of GEOS'
+        from gui import Popup_list
+        try:
+            from owslib.wms import WebMapService
+            from owslib.util import openURL
+            from StringIO import StringIO
+            from PIL import Image
+            self.line.tb.set_message('Loading WMS from :'+website.split('/')[2])
+            wms = WebMapService(website)
+            cont = list(wms.contents)
+        except Exception as ie:
+            print ie
+            import tkMessageBox
+            tkMessageBox.showwarning('Sorry','Loading WMS map file from '+website.split('/')[2]+' servers not working...')
+            return
+        titles = [wms[c].title for c in cont]
+        arr = [x.split('-')[-1]+':  '+y for x,y in zip(cont,titles)]
+        i = Popup_list(arr)
+        self.line.tb.set_message('Selected WMS map: '+titles[i].split(',')[-1])
+        if wms[cont[i]].timepositions:
+            times = wms[cont[i]].timepositions
+            j = Popup_list(times)
+            time_sel = times[j]
+        else:
+            time_sel = None
+        try:
+            if not time_sel:
+                time_sel = self.line.ex.datestr+'T12:00'
+            ylim = self.line.line.axes.get_ylim()
+            xlim = self.line.line.axes.get_xlim()
+            #img = wms.getdata(layers=[cont[i]],
+            #                  bbox=(ylim[0],xlim[0],ylim[1],xlim[1]),
+            #                  size=(480,240),
+            #                  transparent=True,
+            #                  time=time_sel,
+            #                  srs='EPSG:4326',
+            #                  format='image/png')
+            #leg_call = openURL(img.geturl().replace('GetMap','GetLegend'))
+            img = wms.getdata(layers=[cont[i],'countries'],
+                              bbox=(ylim[0],xlim[0],ylim[1],xlim[1]),
+                              size=(480,240),
+                              transparent=True,
+                              time=time_sel,
+                              srs='EPSG:4326',
+                              format='image/png')
+            geos = Image.open(StringIO(img.read()))
+            self.line.addfigure_under(geos,xlim[0],ylim[0],xlim[1],ylim[1])
+            #self.line.line.figure.add
+            #leg = Image.open(StringIO(leg_call.read()))
+            #self.line.addfigure_under(leg,xlim[0],ylim[0],xlim[1],ylim[1],outside=True)
+        except:
+            import tkMessageBox
+            tkMessageBox.showwarning('Sorry','Problem getting the image to load')
+            return
+
 class Select_flights(tkSimpleDialog.Dialog):
     """
     Purpose:
@@ -767,4 +825,40 @@ class Select_profile(tkSimpleDialog.Dialog):
             tkMessageBox.showwarning('Bad input','Can not format values, try again')
             return False
         return True
-            
+
+def Popup_list(arr):
+    """
+    Purpose:
+        Popup box that offers selection of list
+        Whatever is clicked, the window closes and returns the resulting index
+    Inputs:
+        arr: list of text values
+    Outputs:
+        index value of selection
+    Dependencies:
+        tkinter
+    MOdifications:
+        written: Samuel LeBlanc, 2015-09-16, NASA Ames, CA
+    """
+    import Tkinter as tk
+    top = tk.Toplevel()
+    lb = tk.Listbox(top)
+    lb.config(width=0)
+    lb.config(height=20)
+    for i,e in enumerate(arr):
+        lb.insert(tk.END,e)
+    top.winfo_toplevel().wm_geometry("")
+    scroll = tk.Scrollbar(top)
+    scroll.pack(side=tk.RIGHT,fill=tk.Y)
+    lb.config(yscrollcommand=scroll.set)
+    scroll.config(command=lb.yview)
+    var = tk.IntVar()
+    def func(e):
+        value, = lb.curselection()
+        var.set(value)
+        top.after(50,top.destroy())
+    lb.bind('<<ListboxSelect>>',func)
+    lb.pack()
+    return var.get()
+    
+
