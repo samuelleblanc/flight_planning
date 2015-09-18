@@ -517,7 +517,7 @@ class gui:
 	    ll_lon = tkSimpleDialog.askfloat('Lower left lon','Lower left lon? [deg]')
 	    ur_lat = tkSimpleDialog.askfloat('Upper right lat','Upper right lat? [deg]')
 	    ur_lon = tkSimpleDialog.askfloat('Upper right lon','Upper right lon? [deg]')
-	self.line.addfigure_under(img,ll_lat,ll_lon,ur_lat,ur_lon,alpha=0.6)
+	self.line.addfigure_under(img,ll_lat,ll_lon,ur_lat,ur_lon)
 
     def gui_addgeos(self,website='http://wms.gsfc.nasa.gov/cgi-bin/wms.cgi?project=GEOS.fp.fcst.inst1_2d_hwl_Nx'):
         'GUI handler for adding the figures from WMS support of GEOS'
