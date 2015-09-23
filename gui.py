@@ -317,11 +317,16 @@ class gui:
                                                     command=self.gui_changeflight,bg='white'))
         self.flightselect_arr[self.flight_num].pack(in_=self.frame_select,side=tk.TOP,
                                                     padx=4,pady=2,fill=tk.BOTH)
+        print 'adding flight path to date: %s' %self.line.ex.datestr
         self.line.ex_arr.append(ex.dict_position(datestr=self.line.ex.datestr,
                                                  name=newname,
                                                  newsheetonly=True,
                                                  sheet_num=self.flight_num,
-                                                 color=self.colorcycle[self.flight_num]))
+                                                 color=self.colorcycle[self.flight_num],
+                                                 lon0=self.line.ex.lon[0],lat0=self.line.ex.lat[0],
+                                                 UTC_start=self.line.ex.utc[0],
+                                                 UTC_conversion=self.line.ex.UTC_conversion,
+                                                 alt0=self.line.ex.alt[0]))
         self.line.newline()
         self.iactive.set(self.flight_num)
         self.gui_changeflight()

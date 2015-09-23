@@ -318,5 +318,5 @@ def Create_interaction(test=False,profile=None,**kwargs):
     return lines,ui
 
 if __name__ == "__main__":
-    lines,ui = Create_interaction(test=False)
+    lines,ui = Create_interaction(test=True)
 

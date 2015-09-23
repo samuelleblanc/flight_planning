@@ -128,7 +128,7 @@ class LineBuilder:
                 self.line.axes.format_coord = self.format_position_distance
                 self.line.axes.autoscale(enable=False)
                 self.highlight_linepoint, = self.line.axes.plot(self.xs[self.contains_index],
-                                                            self.ys[self.contains_index],'bo')
+                                                            self.ys[self.contains_index],'bo',zorder=40)
                 self.draw_canvas(extra_points=[self.highlight_linepoint])
             else:
                 self.line.axes.format_coord = self.format_position_simple
@@ -358,12 +358,14 @@ class LineBuilder:
     def makegrey(self):
         'Program to grey out the entire path'
         self.line.set_color('#AAAAAA')
+        self.line.set_zorder(20)
         self.line.figure.canvas.draw()
         self.get_bg()
         
     def colorme(self,c):
         'Program to color the entire path'
         self.line.set_color(c)
+        self.line.set_zorder(30)
 
     def newline(self):
         'Program to do a deep copy of the line object in the LineBuilder class'
@@ -531,6 +533,12 @@ def pll(string):
         return string
     if type(string) is int:
         return float(string)
+    if not type(string) is str:
+        try:
+            return float(string)
+        except TypeError:
+            print 'Error with pll input, trying to return first value'
+            return float(string[0])
     n = len(string.split())
     str_ls = string.split()
     char_neg = re.findall("[SWsw]+",str_ls[-1])
@@ -549,7 +557,8 @@ def pll(string):
     deg_m = 0.0
     for i in range(n-1,0,-1):
         deg_m = deg_m/60.0
-        deg_m = deg_m + float(str_ls[i])/60.0
+        if str_ls[i]:
+            deg_m = deg_m + float(str_ls[i])/60.0
     return deg+(deg_m*sign)
 
 def plot_map_labels(m,filename,marker=None,skip_lines=0,color='k'):

@@ -118,6 +118,7 @@ class dict_position:
         self.verbose = verbose
         self.name = name
         self.platform = self.check_platform(name)
+        print 'Using platform data for: %s' %self.platform
 
         if datestr:
             self.datestr = datestr
@@ -174,17 +175,14 @@ class dict_position:
             elif np.isfinite(self.alt_kft.astype(float)[i+1]):
                 self.alt[i+1] = self.alt_kft[i+1]*1000.0/3.28084
             else:
-                self.alt[i+1] = self.alt[i]
+                self.alt[i+1] = self.get_alt(self.alt[0],self.alt[i])
                 self.alt_kft[i+1] = self.alt[i+1]*3.28084/1000.0
             if np.isfinite(self.speed.astype(float)[i+1]):
                 self.speed_kts[i+1] = self.speed[i+1]*1.94384449246
             elif np.isfinite(self.speed_kts.astype(float)[i+1]):
                 self.speed[i+1] = self.speed_kts[i+1]/1.94384449246
             else:
-                if self.platform=='p3':
-                    self.speed[i+1] = self.calcspeed(self.alt[i],self.alt[i+1])
-                else:
-                    self.speed[i+1] = self.speed[i]
+                self.speed[i+1] = self.calcspeed(self.alt[i],self.alt[i+1])
                 self.speed_kts[i+1] = self.speed[i+1]*1.94384449246  
             self.bearing[i] = mu.bearing([self.lat[i],self.lon[i]],[self.lat[i+1],self.lon[i+1]])
             self.endbearing[i] = (mu.bearing([self.lat[i+1],self.lon[i+1]],[self.lat[i],self.lon[i]])+180)%360.0
@@ -221,19 +219,40 @@ class dict_position:
         self.time2xl()
 
     def calcspeed(self,alt0,alt1):
-        'Simple program to estimate the speed of the P3 from Steven Howell based on TRACE-P'
+        """
+        Simple program to estimate the speed of the aircraft:
+        P3 from Steven Howell based on TRACE-P
+        ER2 from Samuel LeBlanc based on SEAC4RS
+        """
         if self.platform=='p3':
             TAS = 130.0+alt1/1000.0*7.5
             if alt1>6000.0:
                 TAS = 130.0+6*7.5
             if alt1>alt0+200.0:
                 TAS = TAS -15.0
+        elif self.platform=='er2':
+            TAS = 70+alt0*0.0071
         else:
             TAS = 130.0
         if not np.isfinite(TAS):
             TAS = 130.0
         return TAS
 
+    def get_alt(self,alt0,alti):
+        'Program to guesstimate the cruising altitude'
+        if alti!=alt0:
+            return alti
+        if self.platform=='p3':
+            return 7500.0
+        elif self.platform=='er2':
+            return 19000.0
+        elif self.platform=='c130':
+            return 7500.0
+        elif self.platform=='dc8':
+            return 13000.0
+        else:
+            return alti
+        
     def calc_climb_time(self,alt0,alt1):
         """
         Simple program to calculate the climb/descent time from previous missions
@@ -286,8 +305,8 @@ class dict_position:
 	"""
 	from datetime import datetime
 	dt = []
-	Y,M,D = [int(s) for s in self.datestr.split('-')]
 	for i,u in enumerate(self.utc):
+            Y,M,D = [int(s) for s in self.datestr.split('-')]
             try:
                 hh = int(u)
             except ValueError:
@@ -299,7 +318,18 @@ class dict_position:
 	    while hh > 23:
 	    	hh = hh-24
 		D = D+1
-	    dt.append(datetime(Y,M,D,hh,mm,ss,ms))
+	    try:
+                dt.append(datetime(Y,M,D,hh,mm,ss,ms))
+            except ValueError:
+                print 'Problem on line: %i with datetime for datestr: %s' %(i,self.datestr)
+                print Y,M,D
+                self.get_datestr_from_xl()
+                Y,M,D = [int(s) for s in self.datestr.split('-')]
+                try:
+                    dt.append(datetime(Y,M,D,hh,mm,ss,ms))
+                except ValueError:
+                    print 'Big problem on 2nd try of calcdatetime with datestr, line: %i'%i
+                    continue
 	return dt
 
     def time2xl(self):
@@ -626,7 +656,7 @@ class dict_position:
             from datetime import datetime
             self.datestr = datetime.utcnow().strftime('%Y-%m-%d')
         return wb
-        
+
     def Create_excel(self,name='P3 Flight path',newsheetonly=False):
         """
         Purpose:
@@ -695,6 +725,10 @@ class dict_position:
         """
         self.wb.save(filename)
 
+    def get_datestr_from_xl(self):
+        'Simple program to get the datestr from the excel spreadsheet'
+        self.datestr = str(Range('U1').value).split(' ')[0]
+        
     def save2txt(self,filename=None):
         """ 
 	Simple method to save the points to a text file.
