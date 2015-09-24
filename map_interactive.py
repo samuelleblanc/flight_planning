@@ -674,12 +674,82 @@ def plot_sat_tracks(m,sat):
     """
     Program that goes through and plots the satellite tracks
     """
+    import map_utils as mu
     sat_obj = []
     for k in sat.keys():
-        (lon,lat) = sat[k]
+        if type(sat[k]) is dict:
+            lon = sat[k]['lon']
+            lat = sat[k]['lat']
+        else:
+            (lon,lat) = sat[k]
         x,y = m(lon,lat)
         sat_obj.append(m.plot(x,y,'.',label=k))
-    sat_obj.append(m.ax.legend(loc='lower right',bbox_to_anchor=(1.0,1.04)))
+        co = sat_obj[-1][-1].get_color()
+        #sat_obj.append(mu.mplot_spec(m,lon,lat,'-',linewidth=0.2))
+        if type(sat[k]) is dict:
+            latrange = [m.llcrnrlat,m.urcrnrlat]
+            lonrange = [m.llcrnrlon,m.urcrnrlon]
+            for i,d in enumerate(sat[k]['d']):
+                if not i%20:
+                    if ((lat[i]>=latrange[0])&(lat[i]<=latrange[1])&(lon[i]>=lonrange[0])&(lon[i]<=lonrange[1])):
+                        sat_obj.append(m.ax.text(x[i],y[i],'%02i:%02i' % (d.tuple()[3],d.tuple()[4]),color=co))
+    if len(sat.keys())>4:
+        ncol = 2
+    else:
+        ncol = 1
+    sat_obj.append(m.ax.legend(loc='lower right',bbox_to_anchor=(1.0,1.04),ncol=ncol))
     return sat_obj
+
+def get_sat_tracks_from_tle(datestr):
+    """
+    Program to build the satellite tracks from the two line element file
+    """
+    import ephem
+    import numpy as np
+    from map_interactive import get_tle_from_file
+    try:
+        sat = get_tle_from_file('.\sat.tle')
+    except:
+        import tkMessageBox
+        tkMessageBox.showerror('No sat','There was an error reading the sat.tle file')
+        return None
+    for k in sat.keys():
+        sat[k]['ephem'] = ephem.readtle(k,sat[k]['tle1'],sat[k]['tle2'])
+        sat[k]['d'] = [ephem.Date(datestr+' 00:00')]
+        sat[k]['ephem'].compute(sat[k]['d'][0])
+        sat[k]['lat'] = [np.rad2deg(sat[k]['ephem'].sublat)]
+        sat[k]['lon'] = [np.rad2deg(sat[k]['ephem'].sublong)]
+        for t in xrange(24*60*2):
+            d = ephem.Date(sat[k]['d'][t]+ephem.minute/2.0)
+            sat[k]['d'].append(d)
+            sat[k]['ephem'].compute(d)
+            sat[k]['lat'].append(np.rad2deg(sat[k]['ephem'].sublat))
+            sat[k]['lon'].append(np.rad2deg(sat[k]['ephem'].sublong))
+    return sat
+
+def get_tle_from_file(filename):
+    'Program to load the tle from a file, skips lines with #'
+    sat = {}
+    name = ''
+    first = ''
+    second = ''
+    for line in open(filename,'r'):
+        if line.find('#')>=0:
+            continue
+        if not name:
+            name = line.strip()
+            continue
+        if not first:
+            first = line.strip()
+            continue
+        if not second:
+            second = line.strip()
+            sat[name] = {'tle1':first,'tle2':second}
+            name = ''
+            first = ''
+            second = ''
+    return sat
+    
+    
         
     

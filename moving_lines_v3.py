@@ -220,7 +220,7 @@ def build_buttons(ui,lines,vertical=True):
              ).pack(in_=ui.top,side=side,padx=8,pady=5)
     tk.Label(g.root,text='Extra info:').pack(in_=ui.top,side=side)
     g.baddsat = tk.Button(g.root,text='Add Satellite tracks',
-                         command = g.gui_addsat)
+                         command = g.gui_addsat_tle)
     g.baddsat.pack(in_=ui.top)
     g.baddbocachica = tk.Button(g.root,text='Add Forecast\nfrom Bocachica',
                          command = g.gui_addbocachica)

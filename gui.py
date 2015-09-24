@@ -478,6 +478,16 @@ class gui:
             self.sat_obj = plot_sat_tracks(self.line.m,sat)
         self.line.get_bg()
 
+    def gui_addsat_tle(self):
+        'Gui button to add the satellite tracks'
+        from map_interactive import get_sat_tracks_from_tle, plot_sat_tracks
+        self.line.tb.set_message('Loading satellite info from sat.tle file')
+        sat = get_sat_tracks_from_tle(self.line.ex.datestr)
+        self.line.tb.set_message('Plotting Satellite tracks')
+        self.sat_obj = plot_sat_tracks(self.line.m,sat)
+        self.line.get_bg(redraw=True)
+
+
     def gui_addbocachica(self):
         'GUI handler for adding bocachica foreacast maps to basemap plot'
 	import tkMessageBox
