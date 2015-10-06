@@ -55,7 +55,7 @@ import excel_interface as ex
 import map_interactive as mi
 import gui
 
-version = 'v0.7beta'
+__version__ = 'v0.7beta'
 
 def Get_basemap_profile():
     'Program to load profile dict basemap values'
@@ -117,7 +117,7 @@ def Create_gui(vertical=True):
         pass
     ui = ui
     ui.root = tk.Tk()
-    ui.root.wm_title('Flight planning by Samuel LeBlanc, NASA Ames, '+version)
+    ui.root.wm_title('Flight planning by Samuel LeBlanc, NASA Ames, '+__version__)
     ui.root.geometry('900x950')
     try:
         ui.root.iconbitmap('arc.ico')
