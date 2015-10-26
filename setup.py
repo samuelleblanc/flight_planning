@@ -1,28 +1,41 @@
+#!/usr/bin/env python
+
 from distutils.core import setup
-import zmq.libzmq
-import matplotlib
-import py2exe,sys,os
+import ml
 
-sys.argv.append('py2exe')
+long_description = """Interactive map program to plot and prepare flight plans.
+					  Provides an map based interface connected to an Excel spreadsheet.
+					  Calculates distances, time of flight, speed, and other typically required values whne planning science flights.
+                 	  Specifically developped for NASA aircraft"""
 
-py2exeopts = {'bundle_files':1,
-              'compressed':True,
-              'includes':['zmq.backend.cython',
-                          'matplotlib'],
-              'excludes':['zmq.libzmq',
-                          '_gtkagg','_wxagg','_agg2', 
-                          '_cairo', '_cocoaagg',
-                          '_fltkagg', '_gtk', '_gtkcairo'],
-              'dll_excludes':['libzmq.pyd',
-                              'libgdk-win32-2.0-0.dll',
-                              'libgobject-2.0-0.dll'],
-              'packages':['matplotlib']
-              }
 
-setup(
-    windows = [{'script':'moving_lines.py'}],
-    options = {'py2exe':py2exeopts},
-    zipfile = None,
-    data_files = [('text',['file.rc']),
-                  ('lib',[zmq.libzmq.__file__,matplotlib.get_py2exe_datafiles()])]
-    )
+setup(name='Moving_lines',
+      version=ml.__version__,
+      description='NASA Ames airborne science flight planning software',
+	  long_description=long_description,
+      author='Samuel LeBlanc',
+      author_email='samuel.leblanc@nasa.gov',
+	  Classifiers=['Development Status :: 4 - Beta',
+				   'Environment :: MacOS X',
+				   'Environment :: Win32 (MS Windows)',
+				   'Environment :: X11 Applications',
+				   'Intended Audience :: Science/Research',
+				   'Natural Language :: English',
+				   'Programming Language :: Python :: 2.7',
+				   'Topic :: Scientific/Engineering :: Atmospheric Science',
+				   'Topic :: Utilities'],
+	  py_modules=['moving_lines','map_utils','excel_interafce','map_interface','gui'],
+	  packages=['moving_lines'],
+	  package_data={'moving_lines':['arc.ico','sat.tle','labels.txt','aeronet_locations.txt']},
+	  install_requires=['matplotlib',
+	                    'Tkinter',
+						'numpy',
+						'mpl_toolkits',
+						'scipy',
+						'ephem',
+						'pykml',
+						'simplekml',
+						'gpxpy',
+						'xlwings',
+						'Pysolar==0.6']
+     )
